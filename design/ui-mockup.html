@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>血压记录工具 · UI 设计稿 V2</title>
+<style>
+  :root {
+    --primary: #4a8dff;
+    --primary-deep: #2f6fe4;
+    --primary-light: #e8f0fe;
+    --bg: #f2f6fc;
+    --card: #ffffff;
+    --text: #2b3440;
+    --text-2: #6b7684;
+    --text-3: #9aa4b0;
+    --border: #e4eaf2;
+    --danger: #f0564f;
+    --warn: #f2a03c;
+    --ok: #3fbb7a;
+    --radius: 18px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; }
+  body { background: #e9eef5; color: var(--text); }
+
+  /* ===== 设计稿说明区 ===== */
+  .doc { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
+  .doc h1 { font-size: 26px; margin-bottom: 8px; }
+  .doc .sub { color: var(--text-2); font-size: 14px; margin-bottom: 32px; }
+  .doc h2 { font-size: 19px; margin: 40px 0 6px; }
+  .doc .note { color: var(--text-2); font-size: 13px; margin-bottom: 24px; }
+
+  .swatches { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+  .swatch { width: 112px; border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 2px 8px rgba(70,100,140,.08); }
+  .swatch .c { height: 52px; }
+  .swatch .t { font-size: 11px; padding: 6px 8px; color: var(--text-2); }
+
+  /* ===== 手机端样机 ===== */
+  .phones { display: flex; gap: 28px; flex-wrap: wrap; }
+  .phone { width: 300px; background: #111; border-radius: 40px; padding: 12px; box-shadow: 0 12px 32px rgba(30,50,80,.2); }
+  .phone .screen { background: var(--bg); border-radius: 30px; height: 620px; overflow: hidden; position: relative; display: flex; flex-direction: column; }
+  .phone .notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 90px; height: 20px; background: #111; border-radius: 12px; z-index: 5; }
+  .phone .label { text-align: center; color: #fff; font-size: 13px; padding: 10px 0 2px; opacity: .85; }
+
+  /* ===== 手机屏内通用 ===== */
+  .m-statusbar { height: 36px; flex: none; }
+  .m-body { flex: 1; overflow: hidden; padding: 10px 14px; display: flex; flex-direction: column; gap: 10px; position: relative; }
+  .m-title { font-size: 17px; font-weight: 700; padding: 2px 4px 0; }
+  .m-card { background: var(--card); border-radius: var(--radius); padding: 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .m-btn { background: linear-gradient(135deg, var(--primary), var(--primary-deep)); color: #fff; border-radius: 999px; text-align: center; padding: 12px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(74,141,255,.35); }
+  .m-tabbar { flex: none; height: 56px; background: #fff; border-top: 1px solid var(--border); display: flex; }
+  .m-tabbar div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: var(--text-3); gap: 3px; }
+  .m-tabbar div.on { color: var(--primary); font-weight: 600; }
+  .m-tabbar .ico { width: 19px; height: 19px; border-radius: 7px; background: currentColor; opacity: .3; }
+  .m-tabbar div.on .ico { opacity: 1; }
+
+  /* 登录页 */
+  .login-wrap { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 12px; padding: 0 10px; }
+  .login-logo { width: 68px; height: 68px; border-radius: 24px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); margin: 0 auto 4px; display: flex; align-items: center; justify-content: center; font-size: 30px; box-shadow: 0 6px 16px rgba(74,141,255,.4); }
+  .login-title { text-align: center; font-size: 19px; font-weight: 700; margin-bottom: 10px; }
+  .m-input { background: #fff; border: 1px solid var(--border); border-radius: 999px; padding: 12px 18px; font-size: 14px; color: var(--text-3); }
+  .m-check { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-2); padding-left: 6px; }
+  .m-check .box { width: 16px; height: 16px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+
+  /* 录入页 */
+  .seg { display: flex; background: #e6edf7; border-radius: 999px; padding: 3px; }
+  .seg div { flex: 1; text-align: center; padding: 8px; font-size: 13px; border-radius: 999px; color: var(--text-2); }
+  .seg div.on { background: #fff; color: var(--primary-deep); font-weight: 700; box-shadow: 0 2px 6px rgba(70,100,140,.12); }
+  .bp-card { background: var(--card); border-radius: var(--radius); padding: 16px 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .bp-row { display: flex; gap: 10px; }
+  .bp-field { flex: 1; background: var(--bg); border-radius: 14px; padding: 10px 6px; text-align: center; }
+  .bp-field .v { font-size: 22px; font-weight: 800; }
+  .bp-field .v.bad { color: var(--danger); }
+  .bp-field .k { font-size: 10px; color: var(--text-3); margin-top: 2px; }
+  .m-meta { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-2); background: #fff; border-radius: 999px; padding: 11px 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  /* 右下角悬浮拍照按钮 */
+  .cam-fab { position: absolute; bottom: 16px; right: 16px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .cam-fab .circle { width: 62px; height: 62px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); display: flex; align-items: center; justify-content: center; font-size: 26px; box-shadow: 0 6px 18px rgba(74,141,255,.45); border: 3px solid #fff; }
+  .cam-fab .cap { font-size: 10px; color: var(--text-2); }
+
+  /* 记录页 */
+  .rec { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: var(--radius); padding: 12px 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .rec .nums { flex: 1; }
+  .rec .bp { font-size: 16px; font-weight: 800; }
+  .rec .bp.bad { color: var(--danger); }
+  .rec .bp small { font-size: 11px; color: var(--text-3); font-weight: 400; margin-left: 6px; }
+  .rec .t { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+  .pill { font-size: 10px; border-radius: 999px; padding: 4px 10px; font-weight: 600; white-space: nowrap; }
+  .pill.before { background: #e8f0fe; color: var(--primary-deep); }
+  .pill.after { background: #e5f7ee; color: var(--ok); }
+
+  /* 图表页 */
+  .chart-card { background: #fff; border-radius: var(--radius); padding: 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .legend { display: flex; gap: 12px; font-size: 11px; color: var(--text-2); margin-bottom: 8px; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
+  .range { display: flex; gap: 8px; margin-top: 10px; }
+  .range div { flex: 1; text-align: center; font-size: 11px; padding: 6px; border-radius: 999px; background: #e6edf7; color: var(--text-2); }
+  .range div.on { background: var(--primary); color: #fff; font-weight: 600; }
+
+  /* ===== Web 端样机 ===== */
+  .browser { background: #fff; border-radius: 16px; box-shadow: 0 12px 32px rgba(30,50,80,.16); overflow: hidden; }
+  .browser .bar { background: #edf1f7; padding: 10px 14px; display: flex; gap: 8px; align-items: center; }
+  .browser .bar i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .browser .url { flex: 1; background: #fff; border-radius: 999px; font-size: 12px; color: var(--text-3); padding: 6px 14px; margin-left: 8px; }
+  .web { display: flex; height: 560px; }
+  .web .side { width: 180px; flex: none; background: #fff; border-right: 1px solid var(--border); padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
+  .web .side .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; padding: 4px 8px 14px; }
+  .web .side .logo i { width: 26px; height: 26px; border-radius: 9px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); display: flex; align-items: center; justify-content: center; font-size: 13px; font-style: normal; }
+  .web .nav { padding: 9px 12px; border-radius: 999px; font-size: 13px; color: var(--text-2); }
+  .web .nav.on { background: var(--primary-light); color: var(--primary-deep); font-weight: 700; }
+  .web .main { flex: 1; background: var(--bg); padding: 20px; overflow: hidden; }
+  .web .main h3 { font-size: 16px; margin-bottom: 14px; }
+  .web .grid { display: grid; grid-template-columns: 330px 1fr; gap: 16px; }
+  .w-card { background: #fff; border-radius: var(--radius); padding: 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .w-card h4 { font-size: 13px; margin-bottom: 12px; }
+  .web .rec { box-shadow: none; border: 1px solid var(--border); margin-bottom: 8px; }
+  .w-cam { display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px dashed var(--primary); color: var(--primary-deep); background: var(--primary-light); border-radius: 999px; padding: 10px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+
+  .feedback { background: #eaf3ff; border: 1px solid #bcd7ff; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #2d5386; margin-top: 40px; }
+</style>
+</head>
+<body>
+<div class="doc">
+
+  <h1>血压记录工具 · UI 设计稿 V2</h1>
+  <div class="sub">V2 调整：主色改蓝色 · 字号整体缩小 · 圆润可爱的胶囊风格 · 录入页拍照按钮改为底部居中的圆形大按钮。异常血压仍用红色强调（语义色，便于一眼发现）。</div>
+
+  <h2>设计规范</h2>
+  <div class="note">圆角加大（卡片 18px / 按钮全圆角胶囊形）· 柔和投影 · 蓝色渐变主按钮</div>
+  <div class="swatches">
+    <div class="swatch"><div class="c" style="background:linear-gradient(135deg,#4a8dff,#2f6fe4)"></div><div class="t">主色 蓝色渐变</div></div>
+    <div class="swatch"><div class="c" style="background:#f2f6fc"></div><div class="t">页面背景</div></div>
+    <div class="swatch"><div class="c" style="background:#2b3440"></div><div class="t">主文字</div></div>
+    <div class="swatch"><div class="c" style="background:#f0564f"></div><div class="t">异常偏高</div></div>
+    <div class="swatch"><div class="c" style="background:#e8f0fe"></div><div class="t">服药前标签</div></div>
+    <div class="swatch"><div class="c" style="background:#e5f7ee"></div><div class="t">服药后标签</div></div>
+  </div>
+
+  <h2>手机端 · 四个页面</h2>
+  <div class="note">录入页右下角的圆形悬浮相机按钮是主操作，识别完成后数字自动填入，再点"保存"。</div>
+
+  <div class="phones">
+
+    <!-- 1 登录页 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="login-wrap">
+          <div class="login-logo">🩺</div>
+          <div class="login-title">血压小记</div>
+          <div class="m-input">账号　wushiwen</div>
+          <div class="m-input">密码　••••••••</div>
+          <div class="m-check"><div class="box">✓</div>记住密码，下次自动登录</div>
+          <div class="m-btn">登 录</div>
+        </div>
+      </div>
+      <div class="label">① 登录页</div>
+    </div>
+
+    <!-- 2 录入页 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="m-title">记录血压</div>
+          <div class="seg"><div class="on">💊 服药前</div><div>服药后</div></div>
+          <div class="bp-card">
+            <div class="bp-row">
+              <div class="bp-field"><div class="v bad">142</div><div class="k">收缩压</div></div>
+              <div class="bp-field"><div class="v">88</div><div class="k">舒张压</div></div>
+              <div class="bp-field"><div class="v">72</div><div class="k">心率</div></div>
+            </div>
+          </div>
+          <div class="m-meta"><span>🕐 测量时间</span><span>今天 07:32 ›</span></div>
+          <div class="m-btn">保 存</div>
+          <div class="cam-fab">
+            <div class="circle">📷</div>
+            <div class="cap">拍照识别</div>
+          </div>
+        </div>
+        <div class="m-tabbar">
+          <div class="on"><div class="ico"></div>录入</div>
+          <div><div class="ico"></div>记录</div>
+          <div><div class="ico"></div>图表</div>
+          <div><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">② 录入页（相机按钮右下角悬浮）</div>
+    </div>
+
+    <!-- 3 记录页 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="m-title">历史记录</div>
+          <div class="seg"><div class="on">全部</div><div>服药前</div><div>服药后</div></div>
+          <div class="rec">
+            <div class="nums">
+              <div class="bp bad">142/88<small>❤ 72</small></div>
+              <div class="t">今天 07:32 · 偏高</div>
+            </div>
+            <span class="pill before">服药前</span>
+          </div>
+          <div class="rec">
+            <div class="nums">
+              <div class="bp">118/76<small>❤ 68</small></div>
+              <div class="t">今天 08:40</div>
+            </div>
+            <span class="pill after">服药后</span>
+          </div>
+          <div class="rec">
+            <div class="nums">
+              <div class="bp">125/80<small>❤ 70</small></div>
+              <div class="t">昨天 07:15</div>
+            </div>
+            <span class="pill before">服药前</span>
+          </div>
+          <div class="rec">
+            <div class="nums">
+              <div class="bp">115/74<small>❤ 66</small></div>
+              <div class="t">昨天 21:05</div>
+            </div>
+            <span class="pill after">服药后</span>
+          </div>
+        </div>
+        <div class="m-tabbar">
+          <div><div class="ico"></div>录入</div>
+          <div class="on"><div class="ico"></div>记录</div>
+          <div><div class="ico"></div>图表</div>
+          <div><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">③ 记录页</div>
+    </div>
+
+    <!-- 4 图表页 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="m-title">血压趋势</div>
+          <div class="seg"><div class="on">全部</div><div>服药前</div><div>服药后</div></div>
+          <div class="chart-card">
+            <div class="legend">
+              <span><i style="background:#f0564f"></i>收缩压</span>
+              <span><i style="background:#4a8dff"></i>舒张压</span>
+              <span><i style="background:#3fbb7a"></i>心率</span>
+            </div>
+            <svg viewBox="0 0 260 130" width="100%">
+              <line x1="0" y1="100" x2="260" y2="100" stroke="#eef2f8"/>
+              <line x1="0" y1="65" x2="260" y2="65" stroke="#eef2f8"/>
+              <line x1="0" y1="30" x2="260" y2="30" stroke="#f0564f" stroke-dasharray="5 4" opacity=".45"/>
+              <polyline points="10,30 50,55 90,40 130,60 170,45 210,58 250,50" fill="none" stroke="#f0564f" stroke-width="2.5" stroke-linecap="round"/>
+              <polyline points="10,70 50,82 90,75 130,86 170,78 210,84 250,80" fill="none" stroke="#4a8dff" stroke-width="2.5" stroke-linecap="round"/>
+              <polyline points="10,88 50,95 90,90 130,98 170,92 210,96 250,93" fill="none" stroke="#3fbb7a" stroke-width="2" stroke-dasharray="4 3" stroke-linecap="round"/>
+              <circle cx="10" cy="30" r="3.5" fill="#f0564f"/><circle cx="250" cy="50" r="3.5" fill="#f0564f"/>
+            </svg>
+            <div class="range"><div class="on">近7天</div><div>近30天</div><div>近90天</div></div>
+          </div>
+          <div class="m-card" style="font-size:12px;color:var(--text-2)">
+            红色虚线为 140 高压警戒线，超出即偏高
+          </div>
+        </div>
+        <div class="m-tabbar">
+          <div><div class="ico"></div>录入</div>
+          <div><div class="ico"></div>记录</div>
+          <div class="on"><div class="ico"></div>图表</div>
+          <div><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">④ 图表页</div>
+    </div>
+  </div>
+
+  <h2>Web 端 · 桌面浏览器布局</h2>
+  <div class="note">宽屏时底部 Tab 变为左侧胶囊导航；录入表单与最近记录左右分栏。拍照识别在表单卡片内为胶囊形虚线按钮（桌面用摄像头较少，上传图片为主）。</div>
+
+  <div class="browser">
+    <div class="bar">
+      <i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i>
+      <div class="url">🔒 blood-pressure.local — 血压小记</div>
+    </div>
+    <div class="web">
+      <div class="side">
+        <div class="logo"><i>🩺</i>血压小记</div>
+        <div class="nav on">✎&nbsp; 录入</div>
+        <div class="nav">☰&nbsp; 记录</div>
+        <div class="nav">↗&nbsp; 图表</div>
+        <div class="nav">⚙&nbsp; 设置</div>
+      </div>
+      <div class="main">
+        <h3>记录血压</h3>
+        <div class="grid">
+          <div class="w-card">
+            <h4>新记录</h4>
+            <div class="seg" style="margin-bottom:12px"><div class="on">💊 服药前</div><div>服药后</div></div>
+            <div class="bp-card" style="box-shadow:none;background:var(--bg);margin-bottom:12px">
+              <div class="bp-row">
+                <div class="bp-field" style="background:#fff"><div class="v bad">142</div><div class="k">收缩压</div></div>
+                <div class="bp-field" style="background:#fff"><div class="v">88</div><div class="k">舒张压</div></div>
+                <div class="bp-field" style="background:#fff"><div class="v">72</div><div class="k">心率</div></div>
+              </div>
+            </div>
+            <div class="w-cam">📷 拍照 / 上传图片识别</div>
+            <div class="m-btn">保 存</div>
+          </div>
+          <div class="w-card">
+            <h4>最近记录</h4>
+            <div class="rec">
+              <div class="nums"><div class="bp bad">142/88<small>❤ 72</small></div><div class="t">今天 07:32 · 偏高</div></div>
+              <span class="pill before">服药前</span>
+            </div>
+            <div class="rec">
+              <div class="nums"><div class="bp">118/76<small>❤ 68</small></div><div class="t">今天 08:40</div></div>
+              <span class="pill after">服药后</span>
+            </div>
+            <div class="rec">
+              <div class="nums"><div class="bp">125/80<small>❤ 70</small></div><div class="t">昨天 07:15</div></div>
+              <span class="pill before">服药前</span>
+            </div>
+            <div class="rec">
+              <div class="nums"><div class="bp">115/74<small>❤ 66</small></div><div class="t">昨天 21:05</div></div>
+              <span class="pill after">服药后</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="feedback">
+    <b>请确认：</b>① 蓝色 + 胶囊圆润的风格感觉如何？② 录入页底部圆形相机按钮的位置和大小合适吗？
+    ③ 应用名暂用"血压小记"，喜欢吗还是换一个？④ 还有哪里想调整的？确认后我开始写正式代码。
+  </div>
+
+</div>
+</body>
+</html>

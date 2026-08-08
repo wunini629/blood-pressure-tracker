@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4a8dff">
+<title>血压小记</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+  :root {
+    --primary: #4a8dff;
+    --primary-deep: #2f6fe4;
+    --primary-light: #e8f0fe;
+    --bg: #f2f6fc;
+    --card: #ffffff;
+    --text: #2b3440;
+    --text-2: #6b7684;
+    --text-3: #9aa4b0;
+    --border: #e4eaf2;
+    --danger: #f0564f;
+    --ok: #3fbb7a;
+    --radius: 18px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif; }
+  body { background: var(--bg); color: var(--text); font-size: 14px; }
+  button { font: inherit; border: none; background: none; cursor: pointer; color: inherit; }
+  input, select { font: inherit; }
+
+  /* ===== 登录页 ===== */
+  #loginView { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; gap: 12px; }
+  #loginView .logo { width: 76px; height: 76px; border-radius: 26px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); display: flex; align-items: center; justify-content: center; font-size: 34px; box-shadow: 0 8px 20px rgba(74,141,255,.4); }
+  #loginView h1 { font-size: 20px; margin-bottom: 12px; }
+  #loginView .sub { color: var(--text-2); font-size: 13px; margin-top: -8px; margin-bottom: 8px; }
+  #loginView .field { width: 100%; max-width: 320px; }
+  #loginView input[type=text], #loginView input[type=password] {
+    width: 100%; background: #fff; border: 1px solid var(--border); border-radius: 999px;
+    padding: 13px 18px; font-size: 14px; outline: none; color: var(--text);
+  }
+  #loginView input:focus { border-color: var(--primary); }
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-2); max-width: 320px; width: 100%; padding-left: 8px; }
+  .check-row input { accent-color: var(--primary); width: 16px; height: 16px; }
+
+  .btn { background: linear-gradient(135deg, var(--primary), var(--primary-deep)); color: #fff; border-radius: 999px; padding: 13px; font-size: 15px; font-weight: 600; box-shadow: 0 4px 12px rgba(74,141,255,.35); width: 100%; }
+  .btn:active { opacity: .85; }
+  .btn.plain { background: var(--primary-light); color: var(--primary-deep); box-shadow: none; }
+  #loginView .btn { max-width: 320px; }
+
+  /* ===== 主框架 ===== */
+  #appView { display: none; }
+  .sidebar { display: none; }
+  .page { display: none; padding: 16px 16px 96px; max-width: 640px; margin: 0 auto; }
+  .page.on { display: block; }
+  .page h2 { font-size: 17px; padding: 4px 4px 14px; }
+
+  .tabbar { position: fixed; bottom: 0; left: 0; right: 0; height: calc(58px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: #fff; border-top: 1px solid var(--border); display: flex; z-index: 20; }
+  .tabbar button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: var(--text-3); gap: 3px; }
+  .tabbar button.on { color: var(--primary); font-weight: 600; }
+  .tabbar .ico { font-size: 19px; line-height: 1; filter: grayscale(1); opacity: .45; }
+  .tabbar button.on .ico { filter: none; opacity: 1; }
+
+  /* ===== 通用组件 ===== */
+  .card { background: var(--card); border-radius: var(--radius); padding: 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .seg { display: flex; background: #e6edf7; border-radius: 999px; padding: 3px; }
+  .seg button { flex: 1; text-align: center; padding: 9px; font-size: 13px; border-radius: 999px; color: var(--text-2); }
+  .seg button.on { background: #fff; color: var(--primary-deep); font-weight: 700; box-shadow: 0 2px 6px rgba(70,100,140,.12); }
+
+  /* ===== 录入页 ===== */
+  .add-form { display: flex; flex-direction: column; gap: 12px; }
+  .bp-row { display: flex; gap: 10px; }
+  .bp-field { flex: 1; background: var(--bg); border-radius: 14px; padding: 10px 6px; text-align: center; }
+  .bp-field input { width: 100%; border: none; background: none; text-align: center; font-size: 24px; font-weight: 800; color: var(--text); outline: none; }
+  .bp-field input.bad { color: var(--danger); }
+  .bp-field .k { font-size: 10px; color: var(--text-3); margin-top: 2px; }
+  .meta-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-2); background: #fff; border-radius: 999px; padding: 6px 8px 6px 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .meta-row input { border: none; outline: none; color: var(--text); font-size: 13px; background: none; }
+  .note-input { width: 100%; border: 1px solid var(--border); border-radius: 999px; padding: 12px 18px; font-size: 13px; outline: none; background: #fff; color: var(--text); }
+  .note-input:focus { border-color: var(--primary); }
+
+  .cam-fab { position: fixed; bottom: calc(76px + env(safe-area-inset-bottom)); right: 18px; z-index: 15; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .cam-fab .circle { width: 62px; height: 62px; border-radius: 50%; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); display: flex; align-items: center; justify-content: center; font-size: 25px; box-shadow: 0 6px 18px rgba(74,141,255,.45); border: 3px solid #fff; }
+  .cam-fab .circle.busy { animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { opacity: .5; } }
+  .cam-fab .cap { font-size: 10px; color: var(--text-2); background: rgba(255,255,255,.9); border-radius: 999px; padding: 2px 8px; }
+
+  /* ===== 记录列表 ===== */
+  .rec-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .rec { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: var(--radius); padding: 13px 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .rec .nums { flex: 1; min-width: 0; }
+  .rec .bp { font-size: 17px; font-weight: 800; }
+  .rec .bp.bad { color: var(--danger); }
+  .rec .bp small { font-size: 11px; color: var(--text-3); font-weight: 400; margin-left: 8px; }
+  .rec .t { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+  .rec .note { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+  .pill { font-size: 10px; border-radius: 999px; padding: 4px 10px; font-weight: 600; white-space: nowrap; }
+  .pill.before { background: var(--primary-light); color: var(--primary-deep); }
+  .pill.after { background: #e5f7ee; color: var(--ok); }
+  .rec .del { color: var(--text-3); font-size: 15px; padding: 6px; }
+  .rec .del:active { color: var(--danger); }
+  .empty { text-align: center; color: var(--text-3); font-size: 13px; padding: 40px 0; }
+
+  /* ===== 图表 ===== */
+  .chart-card canvas { width: 100%; display: block; }
+  .legend { display: flex; gap: 12px; font-size: 11px; color: var(--text-2); margin-bottom: 8px; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
+  .range-row { display: flex; gap: 8px; margin-top: 12px; }
+  .range-row button { flex: 1; font-size: 11px; padding: 7px; border-radius: 999px; background: #e6edf7; color: var(--text-2); }
+  .range-row button.on { background: var(--primary); color: #fff; font-weight: 600; }
+
+  /* ===== 设置页 ===== */
+  .set-group { margin-bottom: 16px; }
+  .set-group h3 { font-size: 13px; color: var(--text-2); margin-bottom: 8px; padding-left: 4px; }
+  .set-group .card { display: flex; flex-direction: column; gap: 10px; }
+  .set-row { display: flex; flex-direction: column; gap: 4px; }
+  .set-row label { font-size: 12px; color: var(--text-3); }
+  .set-row input { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 13px; outline: none; color: var(--text); }
+  .set-row input:focus { border-color: var(--primary); }
+
+  /* ===== 提示 ===== */
+  .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(43,52,64,.92); color: #fff; font-size: 13px; padding: 10px 18px; border-radius: 999px; z-index: 99; opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 86vw; text-align: center; }
+  .toast.show { opacity: 1; }
+
+  /* ===== 桌面端（≥880px）=====
+     底部 Tab 变左侧胶囊导航，录入页左右分栏 */
+  @media (min-width: 880px) {
+    .tabbar { display: none; }
+    #appView { padding-left: 200px; }
+    .sidebar { display: flex; position: fixed; left: 0; top: 0; bottom: 0; width: 200px; background: #fff; border-right: 1px solid var(--border); padding: 20px 14px; flex-direction: column; gap: 4px; z-index: 20; }
+    .sidebar .logo { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 15px; padding: 4px 10px 18px; }
+    .sidebar .logo i { width: 30px; height: 30px; border-radius: 10px; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); display: flex; align-items: center; justify-content: center; font-size: 15px; font-style: normal; }
+    .sidebar button { text-align: left; padding: 10px 14px; border-radius: 999px; font-size: 13px; color: var(--text-2); }
+    .sidebar button.on { background: var(--primary-light); color: var(--primary-deep); font-weight: 700; }
+    .page { max-width: 980px; padding: 24px 24px 40px; }
+    .add-grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; align-items: start; }
+    .cam-fab { position: static; margin-top: 4px; }
+    .cam-fab .circle { width: 100%; height: auto; border-radius: 999px; border: 2px dashed var(--primary); background: var(--primary-light); box-shadow: none; padding: 12px; font-size: 15px; color: var(--primary-deep); font-weight: 600; gap: 8px; }
+    .cam-fab .circle::after { content: "拍照 / 上传图片识别"; }
+    .cam-fab .cap { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 登录页 ===== -->
+<div id="loginView">
+  <div class="logo">🩺</div>
+  <h1>血压小记</h1>
+  <div class="sub" id="loginSub">登录后继续</div>
+  <div class="field"><input type="text" id="loginUser" placeholder="账号" autocomplete="username"></div>
+  <div class="field"><input type="password" id="loginPass" placeholder="密码" autocomplete="current-password"></div>
+  <label class="check-row"><input type="checkbox" id="loginRemember" checked>记住密码，下次自动登录</label>
+  <button class="btn" id="loginBtn">登 录</button>
+</div>
+
+<!-- ===== 主界面 ===== -->
+<div id="appView">
+  <nav class="sidebar" id="sidebar">
+    <div class="logo"><i>🩺</i>血压小记</div>
+  </nav>
+
+  <!-- 录入页 -->
+  <section class="page on" id="page-add">
+    <h2>记录血压</h2>
+    <div class="add-grid">
+      <div class="add-form">
+        <div class="seg" id="medSeg">
+          <button data-med="before" class="on">💊 服药前</button>
+          <button data-med="after">服药后</button>
+        </div>
+        <div class="card">
+          <div class="bp-row">
+            <div class="bp-field"><input type="number" id="inSys" placeholder="--" min="40" max="300"><div class="k">收缩压 (高压)</div></div>
+            <div class="bp-field"><input type="number" id="inDia" placeholder="--" min="20" max="200"><div class="k">舒张压 (低压)</div></div>
+            <div class="bp-field"><input type="number" id="inHr" placeholder="--" min="20" max="250"><div class="k">心率</div></div>
+          </div>
+        </div>
+        <div class="meta-row">
+          <span>🕐 测量时间</span>
+          <input type="datetime-local" id="inTime">
+        </div>
+        <input class="note-input" id="inNote" placeholder="备注（选填，如：晨起 / 运动后）">
+        <button class="cam-fab" id="camBtn">
+          <span class="circle">📷</span>
+          <span class="cap">拍照识别</span>
+        </button>
+        <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
+        <button class="btn" id="saveBtn">保 存</button>
+      </div>
+      <div class="card" id="recentCard" style="display:none">
+        <h3 style="font-size:13px;margin-bottom:10px">最近记录</h3>
+        <div class="rec-list" id="recentList" style="margin-top:0"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 记录页 -->
+  <section class="page" id="page-history">
+    <h2>历史记录</h2>
+    <div class="seg" id="histSeg">
+      <button data-f="all" class="on">全部</button>
+      <button data-f="before">服药前</button>
+      <button data-f="after">服药后</button>
+    </div>
+    <div class="rec-list" id="histList"></div>
+  </section>
+
+  <!-- 图表页 -->
+  <section class="page" id="page-chart">
+    <h2>血压趋势</h2>
+    <div class="seg" id="chartSeg" style="margin-bottom:12px">
+      <button data-f="all" class="on">全部</button>
+      <button data-f="before">服药前</button>
+      <button data-f="after">服药后</button>
+    </div>
+    <div class="card chart-card">
+      <div class="legend">
+        <span><i style="background:#f0564f"></i>收缩压</span>
+        <span><i style="background:#4a8dff"></i>舒张压</span>
+        <span><i style="background:#3fbb7a"></i>心率</span>
+      </div>
+      <canvas id="chartCanvas" height="220"></canvas>
+      <div class="range-row" id="rangeRow">
+        <button data-d="7" class="on">近7天</button>
+        <button data-d="30">近30天</button>
+        <button data-d="90">近90天</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 设置页 -->
+  <section class="page" id="page-settings">
+    <h2>设置</h2>
+    <div class="set-group">
+      <h3>拍照识别（AI 接口）</h3>
+      <div class="card">
+        <div class="set-row"><label>接口地址（OpenAI 兼容）</label><input id="setApiBase" placeholder="https://api.moonshot.cn/v1"></div>
+        <div class="set-row"><label>模型名</label><input id="setModel" placeholder="kimi-k2.6"></div>
+        <div class="set-row"><label>API Key（只保存在本机）</label><input id="setApiKey" type="password" placeholder="sk-..."></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn plain" id="testApiBtn" style="flex:1">测试连接</button>
+          <button class="btn" id="saveApiBtn" style="flex:1">保存配置</button>
+        </div>
+      </div>
+    </div>
+    <div class="set-group">
+      <h3>数据</h3>
+      <div class="card">
+        <button class="btn plain" id="exportCsvBtn">导出 CSV（Excel 可打开）</button>
+        <button class="btn plain" id="exportJsonBtn">导出 JSON 备份</button>
+        <button class="btn plain" id="importJsonBtn">导入 JSON 备份</button>
+        <input type="file" id="importInput" accept="application/json" hidden>
+      </div>
+    </div>
+    <div class="set-group">
+      <h3>账号</h3>
+      <div class="card">
+        <div style="font-size:13px;color:var(--text-2)" id="accountInfo"></div>
+        <button class="btn plain" id="logoutBtn" style="color:var(--danger);background:#fdeeed">退出登录</button>
+      </div>
+    </div>
+  </section>
+
+  <nav class="tabbar" id="tabbar"></nav>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+/* ================= 工具 ================= */
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.from(document.querySelectorAll(s));
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
+  del(k) { localStorage.removeItem(k); }
+};
+let toastTimer = null;
+function toast(msg, ms = 2200) {
+  const el = $('#toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+function fmtTs(ts) {
+  const d = new Date(ts);
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  const yest = new Date(now); yest.setDate(now.getDate() - 1);
+  const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+  if (sameDay) return '今天 ' + hm;
+  if (d.toDateString() === yest.toDateString()) return '昨天 ' + hm;
+  return `${d.getMonth() + 1}月${d.getDate()}日 ${hm}`;
+}
+function toLocalInputValue(ts) {
+  const d = new Date(ts);
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function isHigh(r) { return r.sys >= 140 || r.dia >= 90; }
+function isLow(r) { return r.sys <= 90 || r.dia <= 60; }
+
+/* ================= 数据层 ================= */
+const K_ACCOUNT = 'bpx_account';   // {u, h, salt}
+const K_REMEMBER = 'bpx_remember'; // {u, p} 记住密码
+const K_RECORDS = 'bpx_records';   // [{id, owner, sys, dia, hr, ts, med, note}]
+const K_SETTINGS = 'bpx_settings'; // {apiBase, model, apiKey}
+const S_SESSION = 'bpx_session';   // sessionStorage: 已登录用户名
+
+function getRecords() { return LS.get(K_RECORDS, []); }
+function setRecords(list) { LS.set(K_RECORDS, list); }
+function addRecord(r) { const l = getRecords(); l.push(r); setRecords(l); }
+function delRecord(id) { setRecords(getRecords().filter(r => r.id !== id)); }
+
+/* 简单散列（crypto.subtle 不可用时兜底） */
+async function hashPass(salt, pass) {
+  const text = salt + '::' + pass;
+  if (crypto.subtle && window.isSecureContext) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+  return (h2 >>> 0).toString(16) + (h1 >>> 0).toString(16);
+}
+</script>
+
+<script>
+'use strict';
+/* ================= 登录 ================= */
+function currentUser() { return sessionStorage.getItem(S_SESSION); }
+
+async function doLogin() {
+  const u = $('#loginUser').value.trim();
+  const p = $('#loginPass').value;
+  if (!u || !p) { toast('请输入账号和密码'); return; }
+  const acc = LS.get(K_ACCOUNT, null);
+
+  if (!acc) {
+    // 首次使用：注册
+    const salt = Math.random().toString(36).slice(2, 10);
+    const h = await hashPass(salt, p);
+    LS.set(K_ACCOUNT, { u, h, salt });
+    toast('账号已创建，欢迎使用');
+  } else {
+    if (acc.u !== u) { toast('账号不存在'); return; }
+    const h = await hashPass(acc.salt, p);
+    if (h !== acc.h) { toast('密码不正确'); return; }
+  }
+
+  if ($('#loginRemember').checked) LS.set(K_REMEMBER, { u, p });
+  else LS.del(K_REMEMBER);
+
+  sessionStorage.setItem(S_SESSION, u);
+  enterApp();
+}
+
+async function tryAutoLogin() {
+  const saved = LS.get(K_REMEMBER, null);
+  if (!saved) return;
+  const acc = LS.get(K_ACCOUNT, null);
+  if (!acc || acc.u !== saved.u) return;
+  const h = await hashPass(acc.salt, saved.p);
+  if (h === acc.h) {
+    sessionStorage.setItem(S_SESSION, saved.u);
+    enterApp();
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem(S_SESSION);
+  location.reload();
+}
+
+/* ================= 导航 ================= */
+const NAV_ITEMS = [
+  ['add', '✎', '录入'],
+  ['history', '☰', '记录'],
+  ['chart', '↗', '图表'],
+  ['settings', '⚙', '设置'],
+];
+let curPage = 'add';
+
+function buildNav() {
+  const tb = $('#tabbar'), sb = $('#sidebar');
+  NAV_ITEMS.forEach(([key, ico, label]) => {
+    const b1 = document.createElement('button');
+    b1.dataset.page = key;
+    b1.innerHTML = `<span class="ico">${ico}</span>${label}`;
+    b1.onclick = () => goPage(key);
+    tb.appendChild(b1);
+    const b2 = document.createElement('button');
+    b2.dataset.page = key;
+    b2.textContent = `${ico}  ${label}`;
+    b2.onclick = () => goPage(key);
+    sb.appendChild(b2);
+  });
+}
+function goPage(key) {
+  curPage = key;
+  $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + key));
+  $$('#tabbar button, #sidebar button').forEach(b => b.classList.toggle('on', b.dataset.page === key));
+  $('#camBtn').style.display = key === 'add' ? '' : 'none';
+  if (key === 'history') renderHistory();
+  if (key === 'chart') drawChart();
+}
+
+function enterApp() {
+  $('#loginView').style.display = 'none';
+  $('#appView').style.display = 'block';
+  const mq = matchMedia('(min-width: 880px)');
+  $('#recentCard').style.display = mq.matches ? '' : 'none';
+  mq.addEventListener?.('change', e => {
+    $('#recentCard').style.display = e.matches ? '' : 'none';
+  });
+  $('#accountInfo').textContent = '当前账号：' + currentUser();
+  resetAddForm();
+  loadSettings();
+  renderRecent();
+  goPage('add');
+}
+
+/* ================= 录入页 ================= */
+let curMed = 'before';
+
+function resetAddForm() {
+  $('#inSys').value = '';
+  $('#inDia').value = '';
+  $('#inHr').value = '';
+  $('#inNote').value = '';
+  $('#inTime').value = toLocalInputValue(Date.now());
+  markBadInputs();
+}
+function markBadInputs() {
+  const sys = +$('#inSys').value, dia = +$('#inDia').value;
+  $('#inSys').classList.toggle('bad', sys >= 140 || (sys > 0 && sys <= 90));
+  $('#inDia').classList.toggle('bad', dia >= 90 || (dia > 0 && dia <= 60));
+}
+
+function saveRecord() {
+  const sys = +$('#inSys').value, dia = +$('#inDia').value, hr = +$('#inHr').value;
+  if (!sys || !dia) { toast('请填写收缩压和舒张压'); return; }
+  const ts = $('#inTime').value ? new Date($('#inTime').value).getTime() : Date.now();
+  addRecord({
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    owner: currentUser(), // 预留多人字段
+    sys, dia, hr: hr || null,
+    ts, med: curMed,
+    note: $('#inNote').value.trim()
+  });
+  toast('已保存 ✓');
+  resetAddForm();
+  renderRecent();
+}
+
+/* ================= 记录列表 ================= */
+function recItemHTML(r) {
+  const bad = isHigh(r) || isLow(r);
+  const tag = isHigh(r) ? ' · 偏高' : (isLow(r) ? ' · 偏低' : '');
+  return `<div class="rec" data-id="${r.id}">
+    <div class="nums">
+      <div class="bp${bad ? ' bad' : ''}">${r.sys}/${r.dia}${r.hr ? `<small>❤ ${r.hr}</small>` : ''}</div>
+      <div class="t">${fmtTs(r.ts)}${tag}</div>
+      ${r.note ? `<div class="note">📝 ${r.note}</div>` : ''}
+    </div>
+    <span class="pill ${r.med}">${r.med === 'before' ? '服药前' : '服药后'}</span>
+    <button class="del" title="删除">✕</button>
+  </div>`;
+}
+
+let histFilter = 'all';
+function renderHistory() {
+  const list = getRecords()
+    .filter(r => histFilter === 'all' || r.med === histFilter)
+    .sort((a, b) => b.ts - a.ts);
+  $('#histList').innerHTML = list.length
+    ? list.map(recItemHTML).join('')
+    : '<div class="empty">还没有记录，去录入一条吧</div>';
+}
+function renderRecent() {
+  const list = getRecords().sort((a, b) => b.ts - a.ts).slice(0, 5);
+  $('#recentList').innerHTML = list.length
+    ? list.map(recItemHTML).join('')
+    : '<div class="empty">暂无记录</div>';
+}
+
+/* ================= 图表 ================= */
+let chartFilter = 'all';
+let chartDays = 7;
+
+function drawChart() {
+  const cv = $('#chartCanvas');
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth || cv.parentElement.clientWidth - 28;
+  const H = 220;
+  cv.width = W * dpr; cv.height = H * dpr;
+  cv.style.height = H + 'px';
+  const ctx = cv.getContext('2d');
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, W, H);
+
+  const since = Date.now() - chartDays * 864e5;
+  const data = getRecords()
+    .filter(r => r.ts >= since && (chartFilter === 'all' || r.med === chartFilter))
+    .sort((a, b) => a.ts - b.ts);
+
+  const padL = 34, padR = 10, padT = 12, padB = 24;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+
+  if (data.length === 0) {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#9aa4b0';
+    ctx.font = '13px sans-serif';
+    ctx.fillText(`近${chartDays}天暂无数据`, W / 2, H / 2);
+    return;
+  }
+
+  // 数值范围（血压与心率统一比例）
+  let vMin = 40, vMax = 160;
+  data.forEach(r => {
+    vMin = Math.min(vMin, r.dia, r.hr || 999);
+    vMax = Math.max(vMax, r.sys);
+  });
+  vMin = Math.floor((vMin - 10) / 10) * 10;
+  vMax = Math.ceil((vMax + 10) / 10) * 10;
+
+  const x = (i) => padL + (data.length === 1 ? plotW / 2 : (i / (data.length - 1)) * plotW);
+  const y = (v) => padT + plotH - ((v - vMin) / (vMax - vMin)) * plotH;
+
+  // 网格与刻度
+  ctx.font = '10px sans-serif';
+  ctx.fillStyle = '#9aa4b0';
+  ctx.strokeStyle = '#eef2f8';
+  ctx.textAlign = 'right';
+  const step = Math.max(10, Math.round((vMax - vMin) / 5 / 10) * 10);
+  for (let v = vMin; v <= vMax; v += step) {
+    ctx.beginPath(); ctx.moveTo(padL, y(v)); ctx.lineTo(W - padR, y(v)); ctx.stroke();
+    ctx.fillText(v, padL - 6, y(v) + 3);
+  }
+  // 140 警戒线
+  if (140 >= vMin && 140 <= vMax) {
+    ctx.strokeStyle = 'rgba(240,86,79,.5)';
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(padL, y(140)); ctx.lineTo(W - padR, y(140)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  // 日期刻度（首尾）
+  ctx.textAlign = 'left';
+  ctx.fillText(fmtTs(data[0].ts), padL, H - 8);
+  ctx.textAlign = 'right';
+  ctx.fillText(fmtTs(data[data.length - 1].ts), W - padR, H - 8);
+
+  function line(get, color, dash) {
+    const pts = data.map((r, i) => [x(i), get(r)]).filter(p => p[1] !== null && p[1] !== undefined);
+    if (!pts.length) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.setLineDash(dash || []);
+    ctx.beginPath();
+    pts.forEach((p, i) => i ? ctx.lineTo(p[0], y(p[1])) : ctx.moveTo(p[0], y(p[1])));
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = color;
+    pts.forEach(p => { ctx.beginPath(); ctx.arc(p[0], y(p[1]), 3, 0, 7); ctx.fill(); });
+  }
+  line(r => r.sys, '#f0564f');
+  line(r => r.dia, '#4a8dff');
+  line(r => r.hr, '#3fbb7a', [4, 3]);
+}
+
+/* ================= 拍照识别 ================= */
+const DEFAULT_SETTINGS = {
+  apiBase: 'https://api.moonshot.cn/v1',
+  model: 'kimi-k2.6',
+  apiKey: ''
+};
+function getSettings() { return Object.assign({}, DEFAULT_SETTINGS, LS.get(K_SETTINGS, {})); }
+
+function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1024;
+      let { width, height } = img;
+      if (Math.max(width, height) > MAX) {
+        const k = MAX / Math.max(width, height);
+        width = Math.round(width * k);
+        height = Math.round(height * k);
+      }
+      const cv = document.createElement('canvas');
+      cv.width = width; cv.height = height;
+      cv.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(cv.toDataURL('image/jpeg', 0.85));
+      URL.revokeObjectURL(img.src);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function recognizePhoto(file) {
+  const st = getSettings();
+  if (!st.apiKey) {
+    toast('请先在"设置"页配置 API Key', 3000);
+    goPage('settings');
+    return;
+  }
+  const circle = $('#camBtn .circle');
+  circle.classList.add('busy');
+  toast('识别中…', 60000);
+  try {
+    const dataUrl = await compressImage(file);
+    const resp = await fetch(st.apiBase.replace(/\/+$/, '') + '/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + st.apiKey
+      },
+      body: JSON.stringify({
+        model: st.model,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'text', text: '这是一张血压计屏幕的照片。请识别屏幕上显示的血压和心率数值，只返回 JSON，格式为 {"systolic": 收缩压整数, "diastolic": 舒张压整数, "heart_rate": 心率整数或null}，不要返回任何其他内容。' },
+            { type: 'image_url', image_url: { url: dataUrl } }
+          ]
+        }]
+      })
+    });
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error('接口返回 ' + resp.status + '：' + t.slice(0, 120));
+    }
+    const json = await resp.json();
+    const text = json.choices?.[0]?.message?.content || '';
+    const m = text.match(/\{[\s\S]*\}/);
+    if (!m) throw new Error('未识别到数值，请手动输入');
+    const v = JSON.parse(m[0]);
+    if (v.systolic) $('#inSys').value = Math.round(v.systolic);
+    if (v.diastolic) $('#inDia').value = Math.round(v.diastolic);
+    if (v.heart_rate) $('#inHr').value = Math.round(v.heart_rate);
+    markBadInputs();
+    if (!$('#inSys').value && !$('#inDia').value) throw new Error('未识别到数值，请手动输入');
+    toast('识别完成，请确认后保存 ✓');
+  } catch (e) {
+    toast(e.message || '识别失败，请手动输入', 3500);
+  } finally {
+    circle.classList.remove('busy');
+  }
+}
+
+/* ================= 设置页 ================= */
+function loadSettings() {
+  const st = getSettings();
+  $('#setApiBase').value = st.apiBase;
+  $('#setModel').value = st.model;
+  $('#setApiKey').value = st.apiKey;
+}
+function saveSettings() {
+  LS.set(K_SETTINGS, {
+    apiBase: $('#setApiBase').value.trim() || DEFAULT_SETTINGS.apiBase,
+    model: $('#setModel').value.trim() || DEFAULT_SETTINGS.model,
+    apiKey: $('#setApiKey').value.trim()
+  });
+  toast('配置已保存 ✓');
+}
+async function testApi() {
+  saveSettings();
+  const st = getSettings();
+  if (!st.apiKey) { toast('请先填写 API Key'); return; }
+  toast('测试连接中…', 60000);
+  try {
+    const resp = await fetch(st.apiBase.replace(/\/+$/, '') + '/models', {
+      headers: { 'Authorization': 'Bearer ' + st.apiKey }
+    });
+    if (resp.ok) toast('连接成功 ✓');
+    else toast('连接失败：HTTP ' + resp.status, 3500);
+  } catch (e) {
+    toast('连接失败：' + e.message, 3500);
+  }
+}
+
+/* ================= 数据导出 / 导入 ================= */
+function download(filename, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function exportCsv() {
+  const list = getRecords().sort((a, b) => a.ts - b.ts);
+  if (!list.length) { toast('暂无数据可导出'); return; }
+  const esc = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
+  const rows = [['时间', '收缩压', '舒张压', '心率', '服药状态', '备注', '记录人'].join(',')];
+  list.forEach(r => rows.push([
+    esc(new Date(r.ts).toLocaleString('zh-CN')),
+    r.sys, r.dia, r.hr ?? '',
+    r.med === 'before' ? '服药前' : '服药后',
+    esc(r.note), esc(r.owner)
+  ].join(',')));
+  download(`血压记录_${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + rows.join('\n'), 'text/csv;charset=utf-8');
+  toast('CSV 已导出 ✓');
+}
+function exportJson() {
+  const list = getRecords();
+  if (!list.length) { toast('暂无数据可导出'); return; }
+  download(`血压备份_${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(list, null, 2), 'application/json');
+  toast('备份已导出 ✓');
+}
+function importJson(file) {
+  const rd = new FileReader();
+  rd.onload = () => {
+    try {
+      const data = JSON.parse(rd.result);
+      if (!Array.isArray(data)) throw new Error();
+      const valid = data.filter(r => r && r.sys && r.dia && r.ts);
+      if (!valid.length) throw new Error();
+      const existing = new Set(getRecords().map(r => r.id));
+      const merged = getRecords().concat(valid.map(r => ({
+        id: existing.has(r.id) ? r.id + '_imp' : (r.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
+        owner: r.owner || currentUser(),
+        sys: +r.sys, dia: +r.dia, hr: r.hr ? +r.hr : null,
+        ts: +r.ts, med: r.med === 'after' ? 'after' : 'before',
+        note: r.note || ''
+      })));
+      setRecords(merged);
+      renderRecent();
+      toast(`已导入 ${valid.length} 条记录 ✓`, 3000);
+    } catch {
+      toast('文件格式不正确', 3000);
+    }
+  };
+  rd.readAsText(file);
+}
+
+/* ================= 事件绑定 & 初始化 ================= */
+function bindEvents() {
+  $('#loginBtn').onclick = doLogin;
+  $('#loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+  $('#medSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    curMed = b.dataset.med;
+    $$('#medSeg button').forEach(x => x.classList.toggle('on', x === b));
+  });
+  ['#inSys', '#inDia'].forEach(s => $(s).addEventListener('input', markBadInputs));
+  $('#saveBtn').onclick = saveRecord;
+
+  $('#camBtn').onclick = () => $('#camInput').click();
+  $('#camInput').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) recognizePhoto(f);
+    e.target.value = '';
+  });
+
+  $('#histSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    histFilter = b.dataset.f;
+    $$('#histSeg button').forEach(x => x.classList.toggle('on', x === b));
+    renderHistory();
+  });
+  $('#histList').addEventListener('click', e => {
+    const btn = e.target.closest('.del'); if (!btn) return;
+    const id = btn.closest('.rec').dataset.id;
+    if (confirm('删除这条记录？')) { delRecord(id); renderHistory(); renderRecent(); }
+  });
+  $('#recentList').addEventListener('click', e => {
+    const btn = e.target.closest('.del'); if (!btn) return;
+    const id = btn.closest('.rec').dataset.id;
+    if (confirm('删除这条记录？')) { delRecord(id); renderRecent(); }
+  });
+
+  $('#chartSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    chartFilter = b.dataset.f;
+    $$('#chartSeg button').forEach(x => x.classList.toggle('on', x === b));
+    drawChart();
+  });
+  $('#rangeRow').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    chartDays = +b.dataset.d;
+    $$('#rangeRow button').forEach(x => x.classList.toggle('on', x === b));
+    drawChart();
+  });
+  window.addEventListener('resize', () => { if (curPage === 'chart') drawChart(); });
+
+  $('#saveApiBtn').onclick = saveSettings;
+  $('#testApiBtn').onclick = testApi;
+  $('#exportCsvBtn').onclick = exportCsv;
+  $('#exportJsonBtn').onclick = exportJson;
+  $('#importJsonBtn').onclick = () => $('#importInput').click();
+  $('#importInput').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) importJson(f);
+    e.target.value = '';
+  });
+  $('#logoutBtn').onclick = logout;
+}
+
+(function init() {
+  buildNav();
+  bindEvents();
+  const acc = LS.get(K_ACCOUNT, null);
+  if (!acc) $('#loginSub').textContent = '首次使用，输入账号密码即完成注册';
+  const saved = LS.get(K_REMEMBER, null);
+  if (saved) { $('#loginUser').value = saved.u; $('#loginPass').value = saved.p; }
+  if (currentUser()) enterApp();
+  else tryAutoLogin();
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
