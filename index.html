@@ -116,6 +116,23 @@
   .set-row input { border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; font-size: 13px; outline: none; color: var(--text); }
   .set-row input:focus { border-color: var(--primary); }
 
+  /* ===== 体重 ===== */
+  .weight-card { text-align: center; position: relative; padding: 20px 14px 16px; }
+  .weight-card .wv-wrap { display: flex; align-items: baseline; justify-content: center; }
+  .weight-card input { width: 150px; border: none; background: none; text-align: right; font-size: 40px; font-weight: 800; color: var(--text); outline: none; }
+  .weight-card .wu { font-size: 14px; color: var(--text-3); margin-left: 4px; }
+  .unit-toggle { position: absolute; top: 12px; right: 12px; font-size: 11px; background: var(--primary-light); color: var(--primary-deep); border-radius: 999px; padding: 5px 10px; font-weight: 600; }
+  .hint { display: inline-block; font-size: 11px; border-radius: 999px; padding: 4px 12px; margin-top: 8px; font-weight: 600; }
+  .hint.down { background: #e5f7ee; color: var(--ok); }
+  .hint.up { background: #fdeeed; color: var(--danger); }
+  .pill.fasting { background: #fdf3e3; color: #c07f1a; }
+  .pill.full { background: #ece9fd; color: #6b54d3; }
+  .bmi-card { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: var(--radius); padding: 12px 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); font-size: 13px; margin-bottom: 12px; }
+  .bmi-card .b { font-size: 19px; font-weight: 800; color: var(--primary-deep); }
+  .bmi-card .s { font-size: 11px; border-radius: 999px; padding: 3px 10px; font-weight: 600; }
+  .bmi-card .s.ok { color: var(--ok); background: #e5f7ee; }
+  .bmi-card .s.warn { color: #c07f1a; background: #fdf3e3; }
+
   /* ===== 提示 ===== */
   .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(43,52,64,.92); color: #fff; font-size: 13px; padding: 10px 18px; border-radius: 999px; z-index: 99; opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 86vw; text-align: center; }
   .toast.show { opacity: 1; }
@@ -160,18 +177,35 @@
 
   <!-- 录入页 -->
   <section class="page on" id="page-add">
-    <h2>记录血压</h2>
+    <h2 id="addTitle">记录血压</h2>
     <div class="add-grid">
       <div class="add-form">
-        <div class="seg" id="medSeg">
-          <button data-med="before" class="on">💊 服药前</button>
-          <button data-med="after">服药后</button>
+        <div class="seg" id="kindSeg">
+          <button data-kind="bp" class="on">🩺 血压</button>
+          <button data-kind="weight">⚖️ 体重</button>
         </div>
-        <div class="card">
-          <div class="bp-row">
-            <div class="bp-field"><input type="number" id="inSys" placeholder="--" min="40" max="300"><div class="k">收缩压 (高压)</div></div>
-            <div class="bp-field"><input type="number" id="inDia" placeholder="--" min="20" max="200"><div class="k">舒张压 (低压)</div></div>
-            <div class="bp-field"><input type="number" id="inHr" placeholder="--" min="20" max="250"><div class="k">心率</div></div>
+        <div id="bpForm" style="display:contents">
+          <div class="seg" id="medSeg">
+            <button data-med="before" class="on">💊 服药前</button>
+            <button data-med="after">服药后</button>
+          </div>
+          <div class="card">
+            <div class="bp-row">
+              <div class="bp-field"><input type="number" id="inSys" placeholder="--" min="40" max="300"><div class="k">收缩压 (高压)</div></div>
+              <div class="bp-field"><input type="number" id="inDia" placeholder="--" min="20" max="200"><div class="k">舒张压 (低压)</div></div>
+              <div class="bp-field"><input type="number" id="inHr" placeholder="--" min="20" max="250"><div class="k">心率</div></div>
+            </div>
+          </div>
+        </div>
+        <div id="weightForm" style="display:none">
+          <div class="card weight-card">
+            <button class="unit-toggle" id="unitToggle">kg ⇄ 斤</button>
+            <div class="wv-wrap"><input type="number" id="inWeight" step="0.1" placeholder="--"><span class="wu" id="wUnitLabel">kg</span></div>
+            <div class="hint" id="wHint" style="display:none"></div>
+          </div>
+          <div class="seg" id="fastSeg">
+            <button data-fast="fasting" class="on">🍚 空腹</button>
+            <button data-fast="full">非空腹</button>
           </div>
         </div>
         <div class="meta-row">
@@ -181,7 +215,7 @@
         <input class="note-input" id="inNote" placeholder="备注（选填，如：晨起 / 运动后）">
         <button class="cam-fab" id="camBtn">
           <span class="circle">📷</span>
-          <span class="cap">拍照识别</span>
+          <span class="cap" id="camCap">拍血压计</span>
         </button>
         <input type="file" id="camInput" accept="image/*" capture="environment" hidden>
         <button class="btn" id="saveBtn">保 存</button>
@@ -196,24 +230,43 @@
   <!-- 记录页 -->
   <section class="page" id="page-history">
     <h2>历史记录</h2>
+    <div class="seg" id="histKindSeg" style="margin-bottom:10px">
+      <button data-kind="bp" class="on">🩺 血压</button>
+      <button data-kind="weight">⚖️ 体重</button>
+    </div>
     <div class="seg" id="histSeg">
       <button data-f="all" class="on">全部</button>
       <button data-f="before">服药前</button>
       <button data-f="after">服药后</button>
+    </div>
+    <div class="seg" id="histSegW" style="display:none">
+      <button data-f="all" class="on">全部</button>
+      <button data-f="fasting">空腹</button>
+      <button data-f="full">非空腹</button>
     </div>
     <div class="rec-list" id="histList"></div>
   </section>
 
   <!-- 图表页 -->
   <section class="page" id="page-chart">
-    <h2>血压趋势</h2>
+    <h2 id="chartTitle">血压趋势</h2>
+    <div class="seg" id="chartKindSeg" style="margin-bottom:10px">
+      <button data-kind="bp" class="on">🩺 血压</button>
+      <button data-kind="weight">⚖️ 体重</button>
+    </div>
+    <div class="bmi-card" id="bmiCard" style="display:none"></div>
     <div class="seg" id="chartSeg" style="margin-bottom:12px">
       <button data-f="all" class="on">全部</button>
       <button data-f="before">服药前</button>
       <button data-f="after">服药后</button>
     </div>
+    <div class="seg" id="chartSegW" style="margin-bottom:12px;display:none">
+      <button data-f="all" class="on">全部</button>
+      <button data-f="fasting">空腹</button>
+      <button data-f="full">非空腹</button>
+    </div>
     <div class="card chart-card">
-      <div class="legend">
+      <div class="legend" id="chartLegend">
         <span><i style="background:#f0564f"></i>收缩压</span>
         <span><i style="background:#4a8dff"></i>舒张压</span>
         <span><i style="background:#3fbb7a"></i>心率</span>
@@ -240,6 +293,20 @@
           <button class="btn plain" id="testApiBtn" style="flex:1">测试连接</button>
           <button class="btn" id="saveApiBtn" style="flex:1">保存配置</button>
         </div>
+      </div>
+    </div>
+    <div class="set-group">
+      <h3>身体数据（用于 BMI 和目标线）</h3>
+      <div class="card">
+        <div class="set-row"><label>身高（cm）</label><input id="setHeight" type="number" placeholder="如 175"></div>
+        <div class="set-row"><label>目标体重（kg）</label><input id="setTarget" type="number" step="0.1" placeholder="如 68"></div>
+        <div class="set-row"><label>体重默认单位</label>
+          <div class="seg" id="unitSeg">
+            <button data-u="kg" class="on">kg</button>
+            <button data-u="jin">斤</button>
+          </div>
+        </div>
+        <button class="btn" id="saveBodyBtn">保存身体数据</button>
       </div>
     </div>
     <div class="set-group">
@@ -300,6 +367,24 @@ function toLocalInputValue(ts) {
 }
 function isHigh(r) { return r.sys >= 140 || r.dia >= 90; }
 function isLow(r) { return r.sys <= 90 || r.dia <= 60; }
+
+/* 体重辅助 */
+function kindOf(r) { return r.kind === 'weight' ? 'weight' : 'bp'; } // 老数据无 kind 视为血压
+function kgToDisp(kg, unit) { return unit === 'jin' ? kg * 2 : kg; }
+function dispToKg(v, unit) { return unit === 'jin' ? v / 2 : v; }
+function fmtW(kg, unit) { return (Math.round(kgToDisp(kg, unit) * 10) / 10) + ' ' + (unit === 'jin' ? '斤' : 'kg'); }
+function bmiOf(kg) {
+  const h = +getSettings().height;
+  if (!h || !kg) return null;
+  return Math.round(kg / Math.pow(h / 100, 2) * 10) / 10;
+}
+function bmiLabel(b) {
+  if (b === null) return '';
+  if (b < 18.5) return '偏瘦';
+  if (b < 24) return '标准';
+  if (b < 28) return '超重';
+  return '肥胖';
+}
 
 /* ================= 数据层 ================= */
 const K_ACCOUNT = 'bpx_account';   // {u, h, salt}
@@ -423,17 +508,61 @@ function enterApp() {
   $('#accountInfo').textContent = '当前账号：' + currentUser();
   resetAddForm();
   loadSettings();
+  applyKind();
   renderRecent();
   goPage('add');
 }
 
 /* ================= 录入页 ================= */
 let curMed = 'before';
+let curKind = 'bp';      // 'bp' | 'weight'
+let curFast = 'fasting'; // 'fasting' | 'full'
+let curUnit = 'kg';      // 当前体重输入单位（kg / jin）
+
+function applyKind() {
+  const isW = curKind === 'weight';
+  $('#addTitle').textContent = isW ? '记录体重' : '记录血压';
+  $('#bpForm').style.display = isW ? 'none' : 'contents';
+  $('#weightForm').style.display = isW ? 'block' : 'none';
+  $('#camCap').textContent = isW ? '拍体重秤' : '拍血压计';
+  $$('#kindSeg button').forEach(b => b.classList.toggle('on', b.dataset.kind === curKind));
+  if (isW) { setUnit(getSettings().unit || 'kg', true); updateWeightHint(); }
+}
+
+function setUnit(u, keepValue) {
+  const inp = $('#inWeight');
+  const v = parseFloat(inp.value);
+  if (keepValue && !isNaN(v)) inp.value = Math.round(kgToDisp(dispToKg(v, curUnit), u) * 10) / 10;
+  curUnit = u;
+  $('#wUnitLabel').textContent = u === 'jin' ? '斤' : 'kg';
+  $('#unitToggle').textContent = (u === 'jin' ? '斤' : 'kg') + ' ⇄ ' + (u === 'jin' ? 'kg' : '斤');
+  updateWeightHint();
+}
+
+function lastWeightKg() {
+  const list = getRecords().filter(r => kindOf(r) === 'weight').sort((a, b) => b.ts - a.ts);
+  return list.length ? list[0].kg : null;
+}
+function updateWeightHint() {
+  const el = $('#wHint');
+  const v = parseFloat($('#inWeight').value);
+  const prev = lastWeightKg();
+  if (isNaN(v) || prev === null) { el.style.display = 'none'; return; }
+  const diff = Math.round((dispToKg(v, curUnit) - prev) * 10) / 10;
+  if (diff === 0) { el.style.display = 'none'; return; }
+  const d = Math.abs(kgToDisp(diff, curUnit));
+  const u = curUnit === 'jin' ? '斤' : 'kg';
+  el.style.display = '';
+  el.className = 'hint ' + (diff < 0 ? 'down' : 'up');
+  el.textContent = `较上次 ${diff < 0 ? '↓' : '↑'} ${(Math.round(d * 10) / 10)} ${u}`;
+}
 
 function resetAddForm() {
   $('#inSys').value = '';
   $('#inDia').value = '';
   $('#inHr').value = '';
+  $('#inWeight').value = '';
+  $('#wHint').style.display = 'none';
   $('#inNote').value = '';
   $('#inTime').value = toLocalInputValue(Date.now());
   markBadInputs();
@@ -445,23 +574,49 @@ function markBadInputs() {
 }
 
 function saveRecord() {
-  const sys = +$('#inSys').value, dia = +$('#inDia').value, hr = +$('#inHr').value;
-  if (!sys || !dia) { toast('请填写收缩压和舒张压'); return; }
   const ts = $('#inTime').value ? new Date($('#inTime').value).getTime() : Date.now();
-  addRecord({
+  const base = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
     owner: currentUser(), // 预留多人字段
-    sys, dia, hr: hr || null,
-    ts, med: curMed,
+    ts,
     note: $('#inNote').value.trim()
-  });
+  };
+  if (curKind === 'weight') {
+    const v = parseFloat($('#inWeight').value);
+    if (isNaN(v) || v <= 0) { toast('请填写体重'); return; }
+    addRecord(Object.assign(base, { kind: 'weight', kg: Math.round(dispToKg(v, curUnit) * 100) / 100, fast: curFast }));
+  } else {
+    const sys = +$('#inSys').value, dia = +$('#inDia').value, hr = +$('#inHr').value;
+    if (!sys || !dia) { toast('请填写收缩压和舒张压'); return; }
+    addRecord(Object.assign(base, { kind: 'bp', sys, dia, hr: hr || null, med: curMed }));
+  }
   toast('已保存 ✓');
   resetAddForm();
   renderRecent();
 }
 
 /* ================= 记录列表 ================= */
-function recItemHTML(r) {
+function weightChangeHTML(r, sortedAsc) {
+  const i = sortedAsc.findIndex(x => x.id === r.id);
+  if (i <= 0) return '<small>—</small>';
+  const diff = Math.round((r.kg - sortedAsc[i - 1].kg) * 10) / 10;
+  if (diff === 0) return '<small>持平</small>';
+  return `<small>较上次 ${diff < 0 ? '↓' : '↑'} ${Math.abs(diff)}</small>`;
+}
+function recItemHTML(r, wAsc) {
+  if (kindOf(r) === 'weight') {
+    const unit = getSettings().unit || 'kg';
+    const bmi = bmiOf(r.kg);
+    return `<div class="rec" data-id="${r.id}">
+      <div class="nums">
+        <div class="bp">${fmtW(r.kg, unit)}${wAsc ? weightChangeHTML(r, wAsc) : ''}</div>
+        <div class="t">${fmtTs(r.ts)}${bmi !== null ? ` · BMI ${bmi}` : ''}</div>
+        ${r.note ? `<div class="note">📝 ${r.note}</div>` : ''}
+      </div>
+      <span class="pill ${r.fast}">${r.fast === 'fasting' ? '空腹' : '非空腹'}</span>
+      <button class="del" title="删除">✕</button>
+    </div>`;
+  }
   const bad = isHigh(r) || isLow(r);
   const tag = isHigh(r) ? ' · 偏高' : (isLow(r) ? ' · 偏低' : '');
   return `<div class="rec" data-id="${r.id}">
@@ -476,26 +631,51 @@ function recItemHTML(r) {
 }
 
 let histFilter = 'all';
+let histKind = 'bp';
 function renderHistory() {
-  const list = getRecords()
-    .filter(r => histFilter === 'all' || r.med === histFilter)
+  const isW = histKind === 'weight';
+  const asc = getRecords().filter(r => kindOf(r) === histKind).sort((a, b) => a.ts - b.ts);
+  const list = asc
+    .filter(r => histFilter === 'all' || (isW ? r.fast === histFilter : r.med === histFilter))
     .sort((a, b) => b.ts - a.ts);
   $('#histList').innerHTML = list.length
-    ? list.map(recItemHTML).join('')
+    ? list.map(r => recItemHTML(r, isW ? asc : null)).join('')
     : '<div class="empty">还没有记录，去录入一条吧</div>';
 }
 function renderRecent() {
-  const list = getRecords().sort((a, b) => b.ts - a.ts).slice(0, 5);
+  const isW = curKind === 'weight';
+  const asc = getRecords().filter(r => kindOf(r) === curKind).sort((a, b) => a.ts - b.ts);
+  const list = asc.slice(-5).sort((a, b) => b.ts - a.ts);
   $('#recentList').innerHTML = list.length
-    ? list.map(recItemHTML).join('')
+    ? list.map(r => recItemHTML(r, isW ? asc : null)).join('')
     : '<div class="empty">暂无记录</div>';
 }
 
 /* ================= 图表 ================= */
 let chartFilter = 'all';
 let chartDays = 7;
+let chartKind = 'bp';
+
+function updateBmiCard() {
+  const el = $('#bmiCard');
+  if (chartKind !== 'weight') { el.style.display = 'none'; return; }
+  const kg = lastWeightKg();
+  const bmi = kg !== null ? bmiOf(kg) : null;
+  const h = +getSettings().height;
+  if (bmi === null) { el.style.display = 'none'; return; }
+  const lab = bmiLabel(bmi);
+  const okCls = lab === '标准' ? 'ok' : 'warn';
+  el.style.display = '';
+  el.innerHTML = `<span>BMI <span class="b">${bmi}</span></span><span class="s ${okCls}">${lab} · 身高 ${h}cm</span>`;
+}
 
 function drawChart() {
+  updateBmiCard();
+  const isW = chartKind === 'weight';
+  $('#chartLegend').innerHTML = isW
+    ? `<span><i style="background:#4a8dff"></i>体重</span><span><i style="background:#6b54d3"></i>目标体重</span>`
+    : `<span><i style="background:#f0564f"></i>收缩压</span><span><i style="background:#4a8dff"></i>舒张压</span><span><i style="background:#3fbb7a"></i>心率</span>`;
+
   const cv = $('#chartCanvas');
   const dpr = window.devicePixelRatio || 1;
   const W = cv.clientWidth || cv.parentElement.clientWidth - 28;
@@ -508,7 +688,8 @@ function drawChart() {
 
   const since = Date.now() - chartDays * 864e5;
   const data = getRecords()
-    .filter(r => r.ts >= since && (chartFilter === 'all' || r.med === chartFilter))
+    .filter(r => kindOf(r) === chartKind && r.ts >= since)
+    .filter(r => chartFilter === 'all' || (isW ? r.fast === chartFilter : r.med === chartFilter))
     .sort((a, b) => a.ts - b.ts);
 
   const padL = 34, padR = 10, padT = 12, padB = 24;
@@ -522,14 +703,25 @@ function drawChart() {
     return;
   }
 
-  // 数值范围（血压与心率统一比例）
-  let vMin = 40, vMax = 160;
-  data.forEach(r => {
-    vMin = Math.min(vMin, r.dia, r.hr || 999);
-    vMax = Math.max(vMax, r.sys);
-  });
-  vMin = Math.floor((vMin - 10) / 10) * 10;
-  vMax = Math.ceil((vMax + 10) / 10) * 10;
+  // 数值范围
+  let vMin, vMax;
+  const target = +getSettings().target || null;
+  if (isW) {
+    vMin = Math.min(...data.map(r => r.kg));
+    vMax = Math.max(...data.map(r => r.kg));
+    if (target) { vMin = Math.min(vMin, target); vMax = Math.max(vMax, target); }
+    vMin = Math.floor(vMin - 1);
+    vMax = Math.ceil(vMax + 1);
+    if (vMax - vMin < 4) vMax = vMin + 4;
+  } else {
+    vMin = 40; vMax = 160;
+    data.forEach(r => {
+      vMin = Math.min(vMin, r.dia, r.hr || 999);
+      vMax = Math.max(vMax, r.sys);
+    });
+    vMin = Math.floor((vMin - 10) / 10) * 10;
+    vMax = Math.ceil((vMax + 10) / 10) * 10;
+  }
 
   const x = (i) => padL + (data.length === 1 ? plotW / 2 : (i / (data.length - 1)) * plotW);
   const y = (v) => padT + plotH - ((v - vMin) / (vMax - vMin)) * plotH;
@@ -539,19 +731,29 @@ function drawChart() {
   ctx.fillStyle = '#9aa4b0';
   ctx.strokeStyle = '#eef2f8';
   ctx.textAlign = 'right';
-  const step = Math.max(10, Math.round((vMax - vMin) / 5 / 10) * 10);
+  const step = isW ? Math.max(1, Math.round((vMax - vMin) / 5)) : Math.max(10, Math.round((vMax - vMin) / 5 / 10) * 10);
   for (let v = vMin; v <= vMax; v += step) {
     ctx.beginPath(); ctx.moveTo(padL, y(v)); ctx.lineTo(W - padR, y(v)); ctx.stroke();
     ctx.fillText(v, padL - 6, y(v) + 3);
   }
-  // 140 警戒线
-  if (140 >= vMin && 140 <= vMax) {
+  // 参考线：血压 140 警戒线 / 体重目标线
+  if (!isW && 140 >= vMin && 140 <= vMax) {
     ctx.strokeStyle = 'rgba(240,86,79,.5)';
     ctx.setLineDash([5, 4]);
     ctx.beginPath(); ctx.moveTo(padL, y(140)); ctx.lineTo(W - padR, y(140)); ctx.stroke();
     ctx.setLineDash([]);
   }
+  if (isW && target && target >= vMin && target <= vMax) {
+    ctx.strokeStyle = 'rgba(107,84,211,.6)';
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath(); ctx.moveTo(padL, y(target)); ctx.lineTo(W - padR, y(target)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#6b54d3';
+    ctx.textAlign = 'left';
+    ctx.fillText(`目标 ${target}kg`, padL + 4, y(target) - 4);
+  }
   // 日期刻度（首尾）
+  ctx.fillStyle = '#9aa4b0';
   ctx.textAlign = 'left';
   ctx.fillText(fmtTs(data[0].ts), padL, H - 8);
   ctx.textAlign = 'right';
@@ -572,16 +774,23 @@ function drawChart() {
     ctx.fillStyle = color;
     pts.forEach(p => { ctx.beginPath(); ctx.arc(p[0], y(p[1]), 3, 0, 7); ctx.fill(); });
   }
-  line(r => r.sys, '#f0564f');
-  line(r => r.dia, '#4a8dff');
-  line(r => r.hr, '#3fbb7a', [4, 3]);
+  if (isW) {
+    line(r => r.kg, '#4a8dff');
+  } else {
+    line(r => r.sys, '#f0564f');
+    line(r => r.dia, '#4a8dff');
+    line(r => r.hr, '#3fbb7a', [4, 3]);
+  }
 }
 
 /* ================= 拍照识别 ================= */
 const DEFAULT_SETTINGS = {
   apiBase: 'https://api.moonshot.cn/v1',
   model: 'kimi-k2.6',
-  apiKey: ''
+  apiKey: '',
+  height: '',   // cm，用于 BMI
+  target: '',   // 目标体重 kg
+  unit: 'kg'    // 体重默认单位 kg / jin
 };
 function getSettings() { return Object.assign({}, DEFAULT_SETTINGS, LS.get(K_SETTINGS, {})); }
 
@@ -614,6 +823,10 @@ async function recognizePhoto(file) {
     goPage('settings');
     return;
   }
+  const isW = curKind === 'weight';
+  const prompt = isW
+    ? '这是一张体重秤屏幕的照片。请识别屏幕上显示的体重数值，只返回 JSON，格式为 {"weight": 体重数值(数字,单位kg,若屏幕显示的是斤则换算为kg)}，不要返回任何其他内容。'
+    : '这是一张血压计屏幕的照片。请识别屏幕上显示的血压和心率数值，只返回 JSON，格式为 {"systolic": 收缩压整数, "diastolic": 舒张压整数, "heart_rate": 心率整数或null}，不要返回任何其他内容。';
   const circle = $('#camBtn .circle');
   circle.classList.add('busy');
   toast('识别中…', 60000);
@@ -630,7 +843,7 @@ async function recognizePhoto(file) {
         messages: [{
           role: 'user',
           content: [
-            { type: 'text', text: '这是一张血压计屏幕的照片。请识别屏幕上显示的血压和心率数值，只返回 JSON，格式为 {"systolic": 收缩压整数, "diastolic": 舒张压整数, "heart_rate": 心率整数或null}，不要返回任何其他内容。' },
+            { type: 'text', text: prompt },
             { type: 'image_url', image_url: { url: dataUrl } }
           ]
         }]
@@ -645,11 +858,17 @@ async function recognizePhoto(file) {
     const m = text.match(/\{[\s\S]*\}/);
     if (!m) throw new Error('未识别到数值，请手动输入');
     const v = JSON.parse(m[0]);
-    if (v.systolic) $('#inSys').value = Math.round(v.systolic);
-    if (v.diastolic) $('#inDia').value = Math.round(v.diastolic);
-    if (v.heart_rate) $('#inHr').value = Math.round(v.heart_rate);
-    markBadInputs();
-    if (!$('#inSys').value && !$('#inDia').value) throw new Error('未识别到数值，请手动输入');
+    if (isW) {
+      if (!v.weight) throw new Error('未识别到数值，请手动输入');
+      $('#inWeight').value = Math.round(kgToDisp(+v.weight, curUnit) * 10) / 10;
+      updateWeightHint();
+    } else {
+      if (v.systolic) $('#inSys').value = Math.round(v.systolic);
+      if (v.diastolic) $('#inDia').value = Math.round(v.diastolic);
+      if (v.heart_rate) $('#inHr').value = Math.round(v.heart_rate);
+      markBadInputs();
+      if (!$('#inSys').value && !$('#inDia').value) throw new Error('未识别到数值，请手动输入');
+    }
     toast('识别完成，请确认后保存 ✓');
   } catch (e) {
     toast(e.message || '识别失败，请手动输入', 3500);
@@ -664,14 +883,28 @@ function loadSettings() {
   $('#setApiBase').value = st.apiBase;
   $('#setModel').value = st.model;
   $('#setApiKey').value = st.apiKey;
+  $('#setHeight').value = st.height;
+  $('#setTarget').value = st.target;
+  $$('#unitSeg button').forEach(b => b.classList.toggle('on', b.dataset.u === (st.unit || 'kg')));
 }
 function saveSettings() {
-  LS.set(K_SETTINGS, {
+  const cur = getSettings();
+  LS.set(K_SETTINGS, Object.assign(cur, {
     apiBase: $('#setApiBase').value.trim() || DEFAULT_SETTINGS.apiBase,
     model: $('#setModel').value.trim() || DEFAULT_SETTINGS.model,
     apiKey: $('#setApiKey').value.trim()
-  });
+  }));
   toast('配置已保存 ✓');
+}
+function saveBody() {
+  const cur = getSettings();
+  LS.set(K_SETTINGS, Object.assign(cur, {
+    height: $('#setHeight').value.trim(),
+    target: $('#setTarget').value.trim(),
+    unit: $$('#unitSeg button').find(b => b.classList.contains('on'))?.dataset.u || 'kg'
+  }));
+  if (curKind === 'weight') setUnit(getSettings().unit || 'kg', true);
+  toast('身体数据已保存 ✓');
 }
 async function testApi() {
   saveSettings();
@@ -701,20 +934,23 @@ function exportCsv() {
   const list = getRecords().sort((a, b) => a.ts - b.ts);
   if (!list.length) { toast('暂无数据可导出'); return; }
   const esc = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
-  const rows = [['时间', '收缩压', '舒张压', '心率', '服药状态', '备注', '记录人'].join(',')];
-  list.forEach(r => rows.push([
-    esc(new Date(r.ts).toLocaleString('zh-CN')),
-    r.sys, r.dia, r.hr ?? '',
-    r.med === 'before' ? '服药前' : '服药后',
-    esc(r.note), esc(r.owner)
-  ].join(',')));
-  download(`血压记录_${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + rows.join('\n'), 'text/csv;charset=utf-8');
+  const rows = [['类型', '时间', '收缩压', '舒张压', '心率', '体重(kg)', '状态', '备注', '记录人'].join(',')];
+  list.forEach(r => {
+    if (kindOf(r) === 'weight') {
+      rows.push(['体重', esc(new Date(r.ts).toLocaleString('zh-CN')), '', '', '', r.kg,
+        r.fast === 'fasting' ? '空腹' : '非空腹', esc(r.note), esc(r.owner)].join(','));
+    } else {
+      rows.push(['血压', esc(new Date(r.ts).toLocaleString('zh-CN')), r.sys, r.dia, r.hr ?? '', '',
+        r.med === 'before' ? '服药前' : '服药后', esc(r.note), esc(r.owner)].join(','));
+    }
+  });
+  download(`生活记录_${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + rows.join('\n'), 'text/csv;charset=utf-8');
   toast('CSV 已导出 ✓');
 }
 function exportJson() {
   const list = getRecords();
   if (!list.length) { toast('暂无数据可导出'); return; }
-  download(`血压备份_${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(list, null, 2), 'application/json');
+  download(`生活记录备份_${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(list, null, 2), 'application/json');
   toast('备份已导出 ✓');
 }
 function importJson(file) {
@@ -723,16 +959,21 @@ function importJson(file) {
     try {
       const data = JSON.parse(rd.result);
       if (!Array.isArray(data)) throw new Error();
-      const valid = data.filter(r => r && r.sys && r.dia && r.ts);
+      const valid = data.filter(r => r && r.ts && ((r.sys && r.dia) || (kindOf(r) === 'weight' && r.kg)));
       if (!valid.length) throw new Error();
       const existing = new Set(getRecords().map(r => r.id));
-      const merged = getRecords().concat(valid.map(r => ({
-        id: existing.has(r.id) ? r.id + '_imp' : (r.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
-        owner: r.owner || currentUser(),
-        sys: +r.sys, dia: +r.dia, hr: r.hr ? +r.hr : null,
-        ts: +r.ts, med: r.med === 'after' ? 'after' : 'before',
-        note: r.note || ''
-      })));
+      const merged = getRecords().concat(valid.map(r => {
+        const base = {
+          id: existing.has(r.id) ? r.id + '_imp' : (r.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
+          owner: r.owner || currentUser(),
+          ts: +r.ts,
+          note: r.note || ''
+        };
+        if (kindOf(r) === 'weight') {
+          return Object.assign(base, { kind: 'weight', kg: +r.kg, fast: r.fast === 'full' ? 'full' : 'fasting' });
+        }
+        return Object.assign(base, { kind: 'bp', sys: +r.sys, dia: +r.dia, hr: r.hr ? +r.hr : null, med: r.med === 'after' ? 'after' : 'before' });
+      }));
       setRecords(merged);
       renderRecent();
       toast(`已导入 ${valid.length} 条记录 ✓`, 3000);
@@ -753,6 +994,19 @@ function bindEvents() {
     curMed = b.dataset.med;
     $$('#medSeg button').forEach(x => x.classList.toggle('on', x === b));
   });
+  $('#kindSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    curKind = b.dataset.kind;
+    applyKind();
+    renderRecent();
+  });
+  $('#fastSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    curFast = b.dataset.fast;
+    $$('#fastSeg button').forEach(x => x.classList.toggle('on', x === b));
+  });
+  $('#unitToggle').addEventListener('click', () => setUnit(curUnit === 'kg' ? 'jin' : 'kg', true));
+  $('#inWeight').addEventListener('input', updateWeightHint);
   ['#inSys', '#inDia'].forEach(s => $(s).addEventListener('input', markBadInputs));
   $('#saveBtn').onclick = saveRecord;
 
@@ -767,6 +1021,23 @@ function bindEvents() {
     const b = e.target.closest('button'); if (!b) return;
     histFilter = b.dataset.f;
     $$('#histSeg button').forEach(x => x.classList.toggle('on', x === b));
+    renderHistory();
+  });
+  $('#histSegW').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    histFilter = b.dataset.f;
+    $$('#histSegW button').forEach(x => x.classList.toggle('on', x === b));
+    renderHistory();
+  });
+  $('#histKindSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    histKind = b.dataset.kind;
+    $$('#histKindSeg button').forEach(x => x.classList.toggle('on', x === b));
+    const isW = histKind === 'weight';
+    $('#histSeg').style.display = isW ? 'none' : '';
+    $('#histSegW').style.display = isW ? '' : 'none';
+    histFilter = 'all';
+    $$('#histSeg button, #histSegW button').forEach(x => x.classList.toggle('on', x.dataset.f === 'all'));
     renderHistory();
   });
   $('#histList').addEventListener('click', e => {
@@ -786,6 +1057,24 @@ function bindEvents() {
     $$('#chartSeg button').forEach(x => x.classList.toggle('on', x === b));
     drawChart();
   });
+  $('#chartSegW').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    chartFilter = b.dataset.f;
+    $$('#chartSegW button').forEach(x => x.classList.toggle('on', x === b));
+    drawChart();
+  });
+  $('#chartKindSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    chartKind = b.dataset.kind;
+    $$('#chartKindSeg button').forEach(x => x.classList.toggle('on', x === b));
+    const isW = chartKind === 'weight';
+    $('#chartTitle').textContent = isW ? '体重趋势' : '血压趋势';
+    $('#chartSeg').style.display = isW ? 'none' : '';
+    $('#chartSegW').style.display = isW ? '' : 'none';
+    chartFilter = 'all';
+    $$('#chartSeg button, #chartSegW button').forEach(x => x.classList.toggle('on', x.dataset.f === 'all'));
+    drawChart();
+  });
   $('#rangeRow').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     chartDays = +b.dataset.d;
@@ -796,6 +1085,11 @@ function bindEvents() {
 
   $('#saveApiBtn').onclick = saveSettings;
   $('#testApiBtn').onclick = testApi;
+  $('#saveBodyBtn').onclick = saveBody;
+  $('#unitSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    $$('#unitSeg button').forEach(x => x.classList.toggle('on', x === b));
+  });
   $('#exportCsvBtn').onclick = exportCsv;
   $('#exportJsonBtn').onclick = exportJson;
   $('#importJsonBtn').onclick = () => $('#importInput').click();

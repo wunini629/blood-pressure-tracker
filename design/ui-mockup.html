@@ -116,6 +116,25 @@
   .web .rec { box-shadow: none; border: 1px solid var(--border); margin-bottom: 8px; }
   .w-cam { display: flex; align-items: center; justify-content: center; gap: 8px; border: 2px dashed var(--primary); color: var(--primary-deep); background: var(--primary-light); border-radius: 999px; padding: 10px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
 
+  /* ===== V2 体重功能 ===== */
+  .type-seg { display: flex; background: #e6edf7; border-radius: 999px; padding: 3px; }
+  .type-seg div { flex: 1; text-align: center; padding: 9px; font-size: 13px; border-radius: 999px; color: var(--text-2); }
+  .type-seg div.on { background: #fff; color: var(--primary-deep); font-weight: 700; box-shadow: 0 2px 6px rgba(70,100,140,.12); }
+  .weight-card { background: var(--card); border-radius: var(--radius); padding: 20px 14px 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); text-align: center; position: relative; }
+  .weight-card .wv { font-size: 40px; font-weight: 800; }
+  .weight-card .wu { font-size: 14px; color: var(--text-3); font-weight: 400; margin-left: 4px; }
+  .unit-toggle { position: absolute; top: 12px; right: 12px; font-size: 11px; background: var(--primary-light); color: var(--primary-deep); border-radius: 999px; padding: 5px 10px; font-weight: 600; }
+  .hint { display: inline-block; font-size: 11px; border-radius: 999px; padding: 4px 12px; margin-top: 8px; font-weight: 600; }
+  .hint.down { background: #e5f7ee; color: var(--ok); }
+  .hint.up { background: #fdeeed; color: var(--danger); }
+  .rec .wv2 { font-size: 17px; font-weight: 800; }
+  .rec .wv2 small { font-size: 11px; color: var(--text-3); font-weight: 400; margin-left: 8px; }
+  .pill.fasting { background: #fdf3e3; color: #c07f1a; }
+  .pill.full { background: #ece9fd; color: #6b54d3; }
+  .bmi-card { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: var(--radius); padding: 12px 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); font-size: 13px; }
+  .bmi-card .b { font-size: 19px; font-weight: 800; color: var(--primary-deep); }
+  .bmi-card .s { font-size: 11px; color: var(--ok); background: #e5f7ee; border-radius: 999px; padding: 3px 10px; font-weight: 600; }
+
   .feedback { background: #eaf3ff; border: 1px solid #bcd7ff; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #2d5386; margin-top: 40px; }
 </style>
 </head>
@@ -333,9 +352,162 @@
     </div>
   </div>
 
+  <h2>V2 新增 · 体重记录功能（待确认）</h2>
+  <div class="note">方案 A：每个页面顶部加"🩺 血压 / ⚖️ 体重"切换，底部导航不变。含：单位 kg⇄斤 切换、空腹/非空腹、拍照识别体重秤、BMI、目标体重线、较上次变化提示。</div>
+
+  <div class="phones">
+
+    <!-- 5 录入页-体重 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
+          <div class="weight-card">
+            <div class="unit-toggle">kg ⇄ 斤</div>
+            <div class="wv">70.5<span class="wu">kg</span></div>
+            <div class="hint down">较上次 ↓ 0.6 kg</div>
+          </div>
+          <div class="seg"><div class="on">🍚 空腹</div><div>非空腹</div></div>
+          <div class="m-meta"><span>🕐 测量时间</span><span>今天 07:05 ›</span></div>
+          <div class="m-btn">保 存</div>
+          <div class="cam-fab">
+            <div class="circle">📷</div>
+            <div class="cap">拍体重秤</div>
+          </div>
+        </div>
+        <div class="m-tabbar">
+          <div class="on"><div class="ico"></div>录入</div>
+          <div><div class="ico"></div>记录</div>
+          <div><div class="ico"></div>图表</div>
+          <div><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">⑤ 录入页（切到体重模式）</div>
+    </div>
+
+    <!-- 6 记录页-体重 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
+          <div class="seg"><div class="on">全部</div><div>空腹</div><div>非空腹</div></div>
+          <div class="rec">
+            <div class="nums">
+              <div class="wv2">70.5 kg<small>较上次 ↓ 0.6</small></div>
+              <div class="t">今天 07:05 · BMI 22.9</div>
+            </div>
+            <span class="pill fasting">空腹</span>
+          </div>
+          <div class="rec">
+            <div class="nums">
+              <div class="wv2">71.1 kg<small>较上次 ↑ 0.2</small></div>
+              <div class="t">昨天 22:10 · BMI 23.1</div>
+            </div>
+            <span class="pill full">非空腹</span>
+          </div>
+          <div class="rec">
+            <div class="nums">
+              <div class="wv2">70.9 kg<small>较上次 ↓ 0.4</small></div>
+              <div class="t">昨天 07:12 · BMI 23.0</div>
+            </div>
+            <span class="pill fasting">空腹</span>
+          </div>
+          <div class="rec">
+            <div class="nums">
+              <div class="wv2">71.3 kg<small>—</small></div>
+              <div class="t">周一 21:50 · BMI 23.2</div>
+            </div>
+            <span class="pill full">非空腹</span>
+          </div>
+        </div>
+        <div class="m-tabbar">
+          <div><div class="ico"></div>录入</div>
+          <div class="on"><div class="ico"></div>记录</div>
+          <div><div class="ico"></div>图表</div>
+          <div><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">⑥ 记录页（体重列表）</div>
+    </div>
+
+    <!-- 7 图表页-体重 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
+          <div class="bmi-card">
+            <span>BMI <span class="b">22.9</span></span>
+            <span class="s">标准 · 身高 175cm</span>
+          </div>
+          <div class="seg"><div class="on">全部</div><div>空腹</div><div>非空腹</div></div>
+          <div class="chart-card">
+            <div class="legend">
+              <span><i style="background:#4a8dff"></i>体重</span>
+              <span><i style="background:#6b54d3"></i>目标 68kg</span>
+            </div>
+            <svg viewBox="0 0 260 130" width="100%">
+              <line x1="0" y1="100" x2="260" y2="100" stroke="#eef2f8"/>
+              <line x1="0" y1="60" x2="260" y2="60" stroke="#eef2f8"/>
+              <line x1="0" y1="95" x2="260" y2="95" stroke="#6b54d3" stroke-dasharray="5 4" opacity=".6"/>
+              <polyline points="10,25 50,40 90,32 130,55 170,48 210,62 250,58" fill="none" stroke="#4a8dff" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="250" cy="58" r="3.5" fill="#4a8dff"/>
+            </svg>
+            <div class="range"><div class="on">近7天</div><div>近30天</div><div>近90天</div></div>
+          </div>
+        </div>
+        <div class="m-tabbar">
+          <div><div class="ico"></div>录入</div>
+          <div><div class="ico"></div>记录</div>
+          <div class="on"><div class="ico"></div>图表</div>
+          <div><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">⑦ 图表页（体重趋势 + 目标线）</div>
+    </div>
+
+    <!-- 8 设置页-新增项 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="m-title">设置</div>
+          <div class="m-card" style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:12px;color:var(--text-3)">身体数据（用于 BMI 和目标线）</div>
+            <div class="m-meta"><span>📏 身高</span><span>175 cm ›</span></div>
+            <div class="m-meta"><span>🎯 目标体重</span><span>68.0 kg ›</span></div>
+            <div style="font-size:12px;color:var(--text-3)">默认单位</div>
+            <div class="seg"><div class="on">kg</div><div>斤</div></div>
+          </div>
+          <div class="m-card" style="font-size:12px;color:var(--text-2)">
+            📷 拍照识别（AI 接口）与血压共用，已配置 ✓<br>
+            💾 导出 CSV 将同时包含血压和体重记录
+          </div>
+        </div>
+        <div class="m-tabbar">
+          <div><div class="ico"></div>录入</div>
+          <div><div class="ico"></div>记录</div>
+          <div><div class="ico"></div>图表</div>
+          <div class="on"><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">⑧ 设置页（新增身体数据）</div>
+    </div>
+  </div>
+
+  <h2>Web 端适配说明</h2>
+  <div class="note">Web 端沿用现有左右分栏：左侧录入卡片顶部同样有"血压 / 体重"切换，切到体重后表单变为体重版；右栏最近记录跟随切换。图表页和记录页同样加顶部切换，布局不变。</div>
+
   <div class="feedback">
-    <b>请确认：</b>① 蓝色 + 胶囊圆润的风格感觉如何？② 录入页底部圆形相机按钮的位置和大小合适吗？
-    ③ 应用名暂用"血压小记"，喜欢吗还是换一个？④ 还有哪里想调整的？确认后我开始写正式代码。
+    <b>请确认体重功能设计：</b>① 录入页"血压 / 体重"顶部切换 + 大数字体重卡片（右上角 kg⇄斤）可以吗？
+    ② "较上次 ↓0.6kg"的变化提示绿色为降、红色为升，符合直觉吗？③ BMI 卡片放在图表页顶部可以吗？
+    ④ 空腹/非空腹的标签配色（空腹=黄、非空腹=紫）有意见吗？确认后开始开发。
   </div>
 
 </div>
