@@ -1,7 +1,7 @@
 {
-  "name": "血压小记",
-  "short_name": "血压小记",
-  "description": "记录血压数据，拍照自动识别",
+  "name": "生活记录",
+  "short_name": "生活记录",
+  "description": "记录血压等生活数据，拍照自动识别",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f2f6fc",
