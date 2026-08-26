@@ -132,6 +132,40 @@
   .bmi-card .s { font-size: 11px; border-radius: 999px; padding: 3px 10px; font-weight: 600; }
   .bmi-card .s.ok { color: var(--ok); background: #e5f7ee; }
   .bmi-card .s.warn { color: #c07f1a; background: #fdf3e3; }
+  /* 体重统计卡 */
+  .stat-card { background: #fff; border-radius: var(--radius); padding: 14px 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .stat-main { font-size: 19px; font-weight: 800; }
+  .stat-main .g { color: var(--ok); }
+  .stat-main .r { color: var(--danger); }
+  .stat-sub { font-size: 11px; color: var(--text-3); }
+  /* 体重·行式列表（表头吸顶，故容器不用 overflow:hidden） */
+  .wtab { background: #fff; border-radius: var(--radius); box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .wrow { display: flex; align-items: center; padding: 6px 14px; font-size: 13px; }
+  .wrow + .wrow { border-top: 1px solid var(--border); }
+  .wrow.head { font-size: 11px; color: var(--text-3); padding: 7px 14px; background: #e6edf7; border-radius: var(--radius) var(--radius) 0 0; position: sticky; top: 0; z-index: 2; }
+  .wrow:last-child { border-radius: 0 0 var(--radius) var(--radius); }
+  .wrow .c-date { flex: 1.1; font-weight: 600; }
+  .wrow .c-date small { display: block; font-weight: 400; font-size: 10px; color: var(--text-3); }
+  .wrow .c-w { flex: 1; font-weight: 700; line-height: 1.2; }
+  .wrow .c-w small { display: block; font-weight: 400; color: var(--text-3); font-size: 9px; }
+  .wrow .c-w.none { color: var(--text-3); font-weight: 400; }
+  .wrow .c-df { flex: .8; text-align: right; font-weight: 700; font-size: 12px; }
+  .wrow .c-df.down { color: var(--ok); }
+  .wrow .c-df.up { color: var(--danger); }
+  .wrow .c-df.flat { color: var(--text-3); font-weight: 400; }
+  /* 体重·日历 */
+  .cal-head { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; padding: 2px 8px; margin-bottom: 4px; }
+  .cal-head button { color: var(--primary-deep); font-size: 18px; padding: 0 10px; }
+  .cal-week { display: grid; grid-template-columns: repeat(7,1fr); font-size: 10px; color: var(--text-3); text-align: center; padding: 4px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; }
+  .cal-cell { background: #fff; border-radius: 12px; padding: 5px 2px; text-align: center; min-height: 54px; box-shadow: 0 2px 6px rgba(70,100,140,.05); }
+  .cal-cell.today { outline: 2px solid var(--primary); }
+  .cal-cell .d { font-size: 10px; color: var(--text-3); }
+  .cal-cell .w { font-size: 13px; font-weight: 800; margin-top: 1px; }
+  .cal-cell .cd { font-size: 9px; font-weight: 600; }
+  .cal-cell .cd.down { color: var(--ok); }
+  .cal-cell .cd.up { color: var(--danger); }
+  .cal-cell.blank { background: none; box-shadow: none; }
 
   /* ===== 提示 ===== */
   .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(43,52,64,.92); color: #fff; font-size: 13px; padding: 10px 18px; border-radius: 999px; z-index: 99; opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 86vw; text-align: center; }
@@ -234,6 +268,11 @@
       <button data-kind="bp" class="on">🩺 血压</button>
       <button data-kind="weight">⚖️ 体重</button>
     </div>
+    <div class="stat-card" id="weightStatCard" style="display:none"></div>
+    <div class="seg" id="histViewSeg" style="display:none;margin-bottom:10px">
+      <button data-v="list" class="on">☰ 列表</button>
+      <button data-v="cal">📅 日历</button>
+    </div>
     <div class="seg" id="histSeg">
       <button data-f="all" class="on">全部</button>
       <button data-f="before">服药前</button>
@@ -245,6 +284,8 @@
       <button data-f="full">非空腹</button>
     </div>
     <div class="rec-list" id="histList"></div>
+    <div id="wListWrap" style="display:none"></div>
+    <div id="wCalWrap" style="display:none"></div>
   </section>
 
   <!-- 图表页 -->
@@ -597,11 +638,15 @@ function saveRecord() {
 
 /* ================= 记录列表 ================= */
 function weightChangeHTML(r, sortedAsc) {
-  const i = sortedAsc.findIndex(x => x.id === r.id);
+  const st = r.fast || 'fasting';
+  const same = sortedAsc.filter(x => (x.fast || 'fasting') === st);
+  const i = same.findIndex(x => x.id === r.id);
   if (i <= 0) return '<small>—</small>';
-  const diff = Math.round((r.kg - sortedAsc[i - 1].kg) * 10) / 10;
-  if (diff === 0) return '<small>持平</small>';
-  return `<small>较上次 ${diff < 0 ? '↓' : '↑'} ${Math.abs(diff)}</small>`;
+  const unit = getSettings().unit || 'kg';
+  const diff = kgToDisp(r.kg - same[i - 1].kg, unit);
+  if (Math.abs(diff) < 0.05) return '<small>持平</small>';
+  const lab = st === 'full' ? '非空腹' : '空腹';
+  return `<small>较上次${lab} ${diff < 0 ? '↓' : '↑'} ${Math.abs(Math.round(diff * 10) / 10)}</small>`;
 }
 function recItemHTML(r, wAsc) {
   if (kindOf(r) === 'weight') {
@@ -632,16 +677,150 @@ function recItemHTML(r, wAsc) {
 
 let histFilter = 'all';
 let histKind = 'bp';
+let histView = 'list';      // 体重模式：list | cal
+let calCursor = null;       // {y, m} 日历当前月份
+
 function renderHistory() {
   const isW = histKind === 'weight';
-  const asc = getRecords().filter(r => kindOf(r) === histKind).sort((a, b) => a.ts - b.ts);
-  const list = asc
-    .filter(r => histFilter === 'all' || (isW ? r.fast === histFilter : r.med === histFilter))
+  $('#histSeg').style.display = isW ? 'none' : '';
+  $('#histSegW').style.display = 'none';
+  $('#weightStatCard').style.display = isW ? '' : 'none';
+  $('#histViewSeg').style.display = isW ? '' : 'none';
+  $('#histList').style.display = isW ? 'none' : '';
+  $('#wListWrap').style.display = isW && histView === 'list' ? '' : 'none';
+  $('#wCalWrap').style.display = isW && histView === 'cal' ? '' : 'none';
+  if (isW) {
+    renderWeightStat();
+    if (histView === 'list') renderWeightRows();
+    else renderWeightCal();
+    return;
+  }
+  const list = getRecords()
+    .filter(r => kindOf(r) === 'bp')
+    .filter(r => histFilter === 'all' || r.med === histFilter)
     .sort((a, b) => b.ts - a.ts);
   $('#histList').innerHTML = list.length
-    ? list.map(r => recItemHTML(r, isW ? asc : null)).join('')
+    ? list.map(r => recItemHTML(r)).join('')
     : '<div class="empty">还没有记录，去录入一条吧</div>';
 }
+
+/* ---------- 体重：统计卡 ---------- */
+function renderWeightStat() {
+  const el = $('#weightStatCard');
+  const unit = getSettings().unit || 'kg';
+  const asc = getRecords().filter(r => kindOf(r) === 'weight').sort((a, b) => a.ts - b.ts);
+  if (!asc.length) { el.innerHTML = '<div class="stat-sub">还没有体重记录，去录入一条吧</div>'; return; }
+  const first = asc[0], latest = asc[asc.length - 1];
+  const diff = kgToDisp(latest.kg - first.kg, unit);
+  const u = unit === 'jin' ? '斤' : 'kg';
+  let main;
+  if (Math.abs(diff) < 0.05) main = '📊 累计 持平';
+  else if (diff < 0) main = `📉 累计 <span class="g">↓ ${Math.abs(Math.round(diff * 10) / 10)} ${u}</span>`;
+  else main = `📈 累计 <span class="r">↑ ${(Math.round(diff * 10) / 10)} ${u}</span>`;
+  const fd = new Date(first.ts);
+  const sub = asc.length > 1
+    ? `相比最初 ${fmtW(first.kg, unit)}（${fd.getMonth() + 1}月${fd.getDate()}日 首次记录）`
+    : '这是第一条体重记录';
+  const bmi = bmiOf(latest.kg);
+  const bmiLine = bmi !== null
+    ? `BMI ${bmi} · ${bmiLabel(bmi)} · 身高 ${getSettings().height}cm`
+    : '在设置页填写身高后可显示 BMI';
+  el.innerHTML = `<div class="stat-main">${main}</div><div class="stat-sub">${sub}</div><div class="stat-sub">${bmiLine}</div>`;
+}
+
+/* ---------- 体重：行式列表 ---------- */
+function dayKey(ts) { const d = new Date(ts); return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate(); }
+function hm(ts) { const d = new Date(ts); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+function dayLabel(ts) {
+  const d = new Date(ts), now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const that = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diff = Math.round((today - that) / 864e5);
+  const md = `${d.getMonth() + 1}月${d.getDate()}日`;
+  if (diff === 0) return ['今天', md];
+  if (diff === 1) return ['昨天', md];
+  if (diff >= 2 && diff <= 7) return ['周' + '日一二三四五六'[d.getDay()], md];
+  return ['', md];
+}
+function weightDays() {
+  const map = new Map();
+  getRecords().filter(r => kindOf(r) === 'weight').forEach(r => {
+    const k = dayKey(r.ts);
+    if (!map.has(k)) map.set(k, { key: k, ts: 0, fasting: null, full: null });
+    const g = map.get(k);
+    g.ts = Math.max(g.ts, r.ts);
+    const st = (r.fast || 'fasting') === 'full' ? 'full' : 'fasting';
+    if (!g[st] || r.ts > g[st].ts) g[st] = r; // 同状态多条取最新
+  });
+  return Array.from(map.values()).sort((a, b) => a.key - b.key);
+}
+function renderWeightRows() {
+  const unit = getSettings().unit || 'kg';
+  const days = weightDays();
+  const wrap = $('#wListWrap');
+  if (!days.length) { wrap.innerHTML = '<div class="empty">还没有体重记录，去录入一条吧</div>'; return; }
+  const cell = (r) => r
+    ? `<span class="c-w" data-id="${r.id}" title="点击可删除">${Math.round(kgToDisp(r.kg, unit) * 10) / 10}<small>${hm(r.ts)}</small></span>`
+    : '<span class="c-w none">—</span>';
+  // 空腹较前日（上一个有空腹记录的日子）
+  let prevFast = null;
+  const rows = days.map(g => {
+    let df = '<span class="c-df flat">—</span>';
+    if (g.fasting) {
+      if (prevFast !== null) {
+        const diff = kgToDisp(g.fasting.kg - prevFast, unit);
+        if (Math.abs(diff) < 0.05) df = '<span class="c-df flat">持平</span>';
+        else df = `<span class="c-df ${diff < 0 ? 'down' : 'up'}">${diff < 0 ? '↓' : '↑'}${Math.abs(Math.round(diff * 10) / 10)}</span>`;
+      }
+      prevFast = g.fasting.kg;
+    }
+    const [lab, md] = dayLabel(g.ts);
+    return `<div class="wrow"><span class="c-date">${lab}<small>${md}</small></span>${cell(g.fasting)}${cell(g.full)}${df}</div>`;
+  }).reverse().join('');
+  wrap.innerHTML = `<div class="wtab"><div class="wrow head"><span class="c-date">日期</span><span class="c-w">🍚 空腹</span><span class="c-w">🌙 非空腹</span><span class="c-df">较前日</span></div>${rows}</div>`;
+}
+
+/* ---------- 体重：日历 ---------- */
+function renderWeightCal() {
+  const unit = getSettings().unit || 'kg';
+  const wrap = $('#wCalWrap');
+  if (!calCursor) { const n = new Date(); calCursor = { y: n.getFullYear(), m: n.getMonth() }; }
+  const { y, m } = calCursor;
+  // 当月每天的空腹最新值
+  const days = weightDays().filter(g => g.fasting);
+  const fastByKey = new Map(days.map(g => [g.key, g.fasting.kg]));
+  // 每格与上一个有空腹记录的日子对比
+  const blanks = (new Date(y, m, 1).getDay() + 6) % 7; // 周一开头
+  const dim = new Date(y, m + 1, 0).getDate();
+  const now = new Date();
+  const todayKey = dayKey(now.getTime());
+  const diffOf = (k, kg) => {
+    // 找该日之前的最近空腹记录
+    const prev = days.filter(g => g.key < k).pop();
+    if (!prev) return '<div class="cd" style="color:var(--text-3)">首日</div>';
+    const diff = kgToDisp(kg - prev.fasting.kg, unit);
+    if (Math.abs(diff) < 0.05) return '<div class="cd">持平</div>';
+    return `<div class="cd ${diff < 0 ? 'down' : 'up'}">${diff < 0 ? '↓' : '↑'}${Math.abs(Math.round(diff * 10) / 10)}</div>`;
+  };
+  let cells = '<div class="cal-cell blank"></div>'.repeat(blanks);
+  for (let d = 1; d <= dim; d++) {
+    const k = y * 10000 + (m + 1) * 100 + d;
+    const kg = fastByKey.get(k);
+    const cls = 'cal-cell' + (k === todayKey ? ' today' : '');
+    cells += `<div class="${cls}"><div class="d">${d}</div>` +
+      (kg !== undefined
+        ? `<div class="w">${Math.round(kgToDisp(kg, unit) * 10) / 10}</div>${diffOf(k, kg)}`
+        : '<div class="w" style="color:var(--text-3)">—</div>') +
+      '</div>';
+  }
+  wrap.innerHTML = `
+    <div class="cal-head"><button id="calPrev">‹</button><b>${y}年${m + 1}月</b><button id="calNext">›</button></div>
+    <div class="cal-week"><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div></div>
+    <div class="cal-grid">${cells}</div>`;
+  $('#calPrev').onclick = () => { calCursor.m--; if (calCursor.m < 0) { calCursor.m = 11; calCursor.y--; } renderWeightCal(); };
+  $('#calNext').onclick = () => { calCursor.m++; if (calCursor.m > 11) { calCursor.m = 0; calCursor.y++; } renderWeightCal(); };
+}
+
 function renderRecent() {
   const isW = curKind === 'weight';
   const asc = getRecords().filter(r => kindOf(r) === curKind).sort((a, b) => a.ts - b.ts);
@@ -1033,12 +1212,20 @@ function bindEvents() {
     const b = e.target.closest('button'); if (!b) return;
     histKind = b.dataset.kind;
     $$('#histKindSeg button').forEach(x => x.classList.toggle('on', x === b));
-    const isW = histKind === 'weight';
-    $('#histSeg').style.display = isW ? 'none' : '';
-    $('#histSegW').style.display = isW ? '' : 'none';
     histFilter = 'all';
-    $$('#histSeg button, #histSegW button').forEach(x => x.classList.toggle('on', x.dataset.f === 'all'));
+    $$('#histSeg button').forEach(x => x.classList.toggle('on', x.dataset.f === 'all'));
     renderHistory();
+  });
+  $('#histViewSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    histView = b.dataset.v;
+    $$('#histViewSeg button').forEach(x => x.classList.toggle('on', x === b));
+    renderHistory();
+  });
+  // 体重行式列表：点击某个体重数字可删除该条记录
+  $('#wListWrap').addEventListener('click', e => {
+    const cellEl = e.target.closest('[data-id]'); if (!cellEl) return;
+    if (confirm('删除这条记录？')) { delRecord(cellEl.dataset.id); renderHistory(); renderRecent(); }
   });
   $('#histList').addEventListener('click', e => {
     const btn = e.target.closest('.del'); if (!btn) return;
