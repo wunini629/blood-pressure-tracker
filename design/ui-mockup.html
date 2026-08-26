@@ -134,6 +134,56 @@
   .bmi-card { display: flex; justify-content: space-between; align-items: center; background: #fff; border-radius: var(--radius); padding: 12px 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); font-size: 13px; }
   .bmi-card .b { font-size: 19px; font-weight: 800; color: var(--primary-deep); }
   .bmi-card .s { font-size: 11px; color: var(--ok); background: #e5f7ee; border-radius: 999px; padding: 3px 10px; font-weight: 600; }
+  /* 体重统计卡 */
+  .stat-card { background: #fff; border-radius: var(--radius); padding: 14px 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); display: flex; flex-direction: column; gap: 8px; }
+  .stat-main { font-size: 19px; font-weight: 800; }
+  .stat-main .g { color: var(--ok); }
+  .stat-sub { font-size: 11px; color: var(--text-3); }
+  .stat-row { display: flex; gap: 8px; }
+  .stat-chip { flex: 1; font-size: 11px; font-weight: 600; border-radius: 12px; padding: 7px 10px; text-align: center; }
+  .stat-chip.down { background: #e5f7ee; color: var(--ok); }
+  .stat-chip.up { background: #fdeeed; color: var(--danger); }
+  /* 体重·每日双列对比卡 */
+  .day-card { background: #fff; border-radius: var(--radius); padding: 12px 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .day-head { display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+  .day-head .df { font-size: 11px; font-weight: 600; }
+  .df.down { color: var(--ok); }
+  .df.up { color: var(--danger); }
+  .day-cols { display: flex; gap: 10px; }
+  .day-col { flex: 1; background: var(--bg); border-radius: 14px; padding: 10px 12px; }
+  .day-col .cap { font-size: 11px; color: var(--text-2); margin-bottom: 4px; }
+  .day-col .big { font-size: 22px; font-weight: 800; }
+  .day-col .big small { font-size: 11px; color: var(--text-3); font-weight: 400; }
+  .day-col .tm { font-size: 10px; color: var(--text-3); margin-top: 2px; }
+  .day-col .extra { font-size: 11px; color: var(--text-2); border-top: 1px dashed var(--border); margin-top: 6px; padding-top: 5px; }
+  .day-col .none { font-size: 15px; color: var(--text-3); padding: 8px 0; }
+  /* 体重·日历 */
+  .cal-head { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; padding: 2px 8px; }
+  .cal-head span { color: var(--primary-deep); font-size: 18px; padding: 0 8px; }
+  .cal-week { display: grid; grid-template-columns: repeat(7,1fr); font-size: 10px; color: var(--text-3); text-align: center; padding: 4px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 5px; }
+  .cal-cell { background: #fff; border-radius: 12px; padding: 5px 2px; text-align: center; min-height: 54px; box-shadow: 0 2px 6px rgba(70,100,140,.05); }
+  .cal-cell.today { outline: 2px solid var(--primary); }
+  .cal-cell .d { font-size: 10px; color: var(--text-3); }
+  .cal-cell .w { font-size: 13px; font-weight: 800; margin-top: 1px; }
+  .cal-cell .cd { font-size: 9px; font-weight: 600; }
+  .cal-cell .cd.down { color: var(--ok); }
+  .cal-cell .cd.up { color: var(--danger); }
+  .cal-cell.blank { background: none; box-shadow: none; }
+  /* 体重·紧凑行式列表 */
+  .wtab { background: #fff; border-radius: var(--radius); box-shadow: 0 3px 12px rgba(70,100,140,.07); overflow: hidden; }
+  .wrow { display: flex; align-items: center; padding: 6px 14px; font-size: 13px; }
+  .wrow + .wrow { border-top: 1px solid var(--border); }
+  .wrow.head { font-size: 11px; color: var(--text-3); padding: 7px 14px; background: var(--bg); position: sticky; top: 0; z-index: 2; }
+  .wrow .c-date { flex: 1.1; font-weight: 600; }
+  .wrow .c-date small { display: block; font-weight: 400; font-size: 10px; color: var(--text-3); }
+  .wrow .c-w { flex: 1; font-weight: 700; line-height: 1.2; }
+  .wrow .c-w small { display: block; font-weight: 400; color: var(--text-3); font-size: 9px; }
+  .wrow .c-w.none { color: var(--text-3); font-weight: 400; }
+  .wrow .c-df { flex: .8; text-align: right; font-weight: 700; font-size: 12px; }
+  .wrow .c-df.down { color: var(--ok); }
+  .wrow .c-df.up { color: var(--danger); }
+  .wrow .c-df.flat { color: var(--text-3); font-weight: 400; }
 
   .feedback { background: #eaf3ff; border: 1px solid #bcd7ff; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #2d5386; margin-top: 40px; }
 </style>
@@ -394,34 +444,56 @@
         <div class="m-statusbar"></div>
         <div class="m-body">
           <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
-          <div class="seg"><div class="on">全部</div><div>空腹</div><div>非空腹</div></div>
-          <div class="rec">
-            <div class="nums">
-              <div class="wv2">70.5 kg<small>较上次 ↓ 0.6</small></div>
-              <div class="t">今天 07:05 · BMI 22.9</div>
-            </div>
-            <span class="pill fasting">空腹</span>
+          <div class="stat-card">
+            <div class="stat-main">📉 累计 <span class="g">↓ 3.2 kg</span></div>
+            <div class="stat-sub">相比最初 73.7 kg（5月1日 首次记录）</div>
+            <div class="stat-sub">BMI 22.9 · 标准 · 身高 175cm</div>
           </div>
-          <div class="rec">
-            <div class="nums">
-              <div class="wv2">71.1 kg<small>较上次 ↑ 0.2</small></div>
-              <div class="t">昨天 22:10 · BMI 23.1</div>
+          <div class="seg"><div class="on">☰ 列表</div><div>📅 日历</div></div>
+          <div class="wtab">
+            <div class="wrow head"><span class="c-date">日期</span><span class="c-w">🍚 空腹</span><span class="c-w">🌙 非空腹</span><span class="c-df">较前日</span></div>
+            <div class="wrow">
+              <span class="c-date">今天<small>8月9日</small></span>
+              <span class="c-w">70.5<small>07:05</small></span>
+              <span class="c-w">71.1<small>22:10</small></span>
+              <span class="c-df down">↓0.4</span>
             </div>
-            <span class="pill full">非空腹</span>
-          </div>
-          <div class="rec">
-            <div class="nums">
-              <div class="wv2">70.9 kg<small>较上次 ↓ 0.4</small></div>
-              <div class="t">昨天 07:12 · BMI 23.0</div>
+            <div class="wrow">
+              <span class="c-date">昨天<small>8月8日</small></span>
+              <span class="c-w">70.9<small>07:12</small></span>
+              <span class="c-w">70.9<small>21:40</small></span>
+              <span class="c-df down">↓0.2</span>
             </div>
-            <span class="pill fasting">空腹</span>
-          </div>
-          <div class="rec">
-            <div class="nums">
-              <div class="wv2">71.3 kg<small>—</small></div>
-              <div class="t">周一 21:50 · BMI 23.2</div>
+            <div class="wrow">
+              <span class="c-date">周三<small>8月5日</small></span>
+              <span class="c-w">72.1<small>07:20</small></span>
+              <span class="c-w none">—</span>
+              <span class="c-df up">↑0.3</span>
             </div>
-            <span class="pill full">非空腹</span>
+            <div class="wrow">
+              <span class="c-date">周二<small>8月4日</small></span>
+              <span class="c-w none">—</span>
+              <span class="c-w">72.4<small>21:55</small></span>
+              <span class="c-df flat">—</span>
+            </div>
+            <div class="wrow">
+              <span class="c-date">周一<small>8月3日</small></span>
+              <span class="c-w">71.8<small>07:08</small></span>
+              <span class="c-w">72.2<small>22:03</small></span>
+              <span class="c-df down">↓1.0</span>
+            </div>
+            <div class="wrow">
+              <span class="c-date">周日<small>8月2日</small></span>
+              <span class="c-w">72.8<small>07:15</small></span>
+              <span class="c-w">73.0<small>21:47</small></span>
+              <span class="c-df down">↓0.9</span>
+            </div>
+            <div class="wrow">
+              <span class="c-date">周六<small>8月1日</small></span>
+              <span class="c-w">73.7<small>07:02</small></span>
+              <span class="c-w none">—</span>
+              <span class="c-df flat">首日</span>
+            </div>
           </div>
         </div>
         <div class="m-tabbar">
@@ -431,7 +503,7 @@
           <div><div class="ico"></div>设置</div>
         </div>
       </div>
-      <div class="label">⑥ 记录页（体重列表）</div>
+      <div class="label">⑥ 记录页（体重·每日双列对比）</div>
     </div>
 
     <!-- 7 图表页-体重 -->
@@ -499,15 +571,49 @@
       </div>
       <div class="label">⑧ 设置页（新增身体数据）</div>
     </div>
+
+    <!-- 9 日历视图 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
+          <div class="seg"><div>☰ 列表</div><div class="on">📅 日历</div></div>
+          <div class="cal-head"><span>‹</span><b>2026年8月</b><span>›</span></div>
+          <div class="cal-week"><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div></div>
+          <div class="cal-grid">
+            <div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div>
+            <div class="cal-cell"><div class="d">1</div><div class="w">73.7</div><div class="cd">首日</div></div>
+            <div class="cal-cell"><div class="d">2</div><div class="w" style="color:var(--text-3)">—</div></div>
+            <div class="cal-cell"><div class="d">3</div><div class="w">72.8</div><div class="cd down">↓0.9</div></div>
+            <div class="cal-cell"><div class="d">4</div><div class="w" style="color:var(--text-3)">—</div></div>
+            <div class="cal-cell"><div class="d">5</div><div class="w">72.1</div><div class="cd down">↓0.7</div></div>
+            <div class="cal-cell"><div class="d">6</div><div class="w">71.5</div><div class="cd down">↓0.6</div></div>
+            <div class="cal-cell"><div class="d">7</div><div class="w" style="color:var(--text-3)">—</div></div>
+            <div class="cal-cell"><div class="d">8</div><div class="w">70.9</div><div class="cd down">↓0.6</div></div>
+            <div class="cal-cell today"><div class="d">9</div><div class="w">70.5</div><div class="cd down">↓0.4</div></div>
+            <div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div>
+          </div>
+        </div>
+        <div class="m-tabbar">
+          <div><div class="ico"></div>录入</div>
+          <div class="on"><div class="ico"></div>记录</div>
+          <div><div class="ico"></div>图表</div>
+          <div><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">⑨ 记录页（体重·日历视图）</div>
+    </div>
   </div>
 
   <h2>Web 端适配说明</h2>
-  <div class="note">Web 端沿用现有左右分栏：左侧录入卡片顶部同样有"血压 / 体重"切换，切到体重后表单变为体重版；右栏最近记录跟随切换。图表页和记录页同样加顶部切换，布局不变。</div>
+  <div class="note">Web 端沿用现有左右分栏：左侧录入卡片顶部同样有"血压 / 体重"切换，切到体重后表单变为体重版；右栏最近记录跟随切换。图表页和记录页同样加顶部切换，布局不变。体重日历在 Web 端加宽展示，交互不变。</div>
 
   <div class="feedback">
-    <b>请确认体重功能设计：</b>① 录入页"血压 / 体重"顶部切换 + 大数字体重卡片（右上角 kg⇄斤）可以吗？
-    ② "较上次 ↓0.6kg"的变化提示绿色为降、红色为升，符合直觉吗？③ BMI 卡片放在图表页顶部可以吗？
-    ④ 空腹/非空腹的标签配色（空腹=黄、非空腹=紫）有意见吗？确认后开始开发。
+    <b>请确认：</b>① 列表改成"每天一行"的紧凑表格（日期 | 🍚空腹 | 🌙非空腹 | 较前日涨幅），这个密度可以吗？
+    ② 当天同状态多条取最新一条展示，可以吗？③ "较前日"列是空腹与上一记录日的对比（绿↓红↑），没测空腹的日子显示"—"，OK 吗？
+    日历视图已确认。确认后开始开发。
   </div>
 
 </div>
