@@ -166,6 +166,15 @@
   .cal-cell .cd.down { color: var(--ok); }
   .cal-cell .cd.up { color: var(--danger); }
   .cal-cell.blank { background: none; box-shadow: none; }
+  /* 打针 */
+  .cal-cell { position: relative; }
+  .inj-dot { position: absolute; top: 2px; right: 3px; font-size: 8px; line-height: 1; }
+  .sheet-mask { position: fixed; inset: 0; background: rgba(30,40,55,.45); z-index: 40; }
+  .sheet { position: fixed; left: 0; right: 0; bottom: 0; max-width: 640px; margin: 0 auto; background: #fff; border-radius: 20px 20px 0 0; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)); z-index: 41; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -6px 24px rgba(0,0,0,.15); }
+  .sheet h4 { font-size: 14px; text-align: center; }
+  .sheet .fld { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--text-2); background: var(--bg); border-radius: 999px; padding: 6px 8px 6px 16px; }
+  .sheet .fld input { border: none; background: none; outline: none; font-size: 13px; color: var(--text); text-align: right; }
+  @media (min-width: 880px) { .sheet { left: 200px; } }
 
   /* ===== 提示 ===== */
   .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(43,52,64,.92); color: #fff; font-size: 13px; padding: 10px 18px; border-radius: 999px; z-index: 99; opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 86vw; text-align: center; }
@@ -211,14 +220,14 @@
 
   <!-- 录入页 -->
   <section class="page on" id="page-add">
-    <h2 id="addTitle">记录血压</h2>
+    <h2 id="addTitle">记录体重</h2>
     <div class="add-grid">
       <div class="add-form">
         <div class="seg" id="kindSeg">
-          <button data-kind="bp" class="on">🩺 血压</button>
-          <button data-kind="weight">⚖️ 体重</button>
+          <button data-kind="weight" class="on">⚖️ 体重</button>
+          <button data-kind="bp">🩺 血压</button>
         </div>
-        <div id="bpForm" style="display:contents">
+        <div id="bpForm" style="display:none">
           <div class="seg" id="medSeg">
             <button data-med="before" class="on">💊 服药前</button>
             <button data-med="after">服药后</button>
@@ -231,7 +240,7 @@
             </div>
           </div>
         </div>
-        <div id="weightForm" style="display:none">
+        <div id="weightForm" style="display:block">
           <div class="card weight-card">
             <button class="unit-toggle" id="unitToggle">kg ⇄ 斤</button>
             <div class="wv-wrap"><input type="number" id="inWeight" step="0.1" placeholder="--"><span class="wu" id="wUnitLabel">kg</span></div>
@@ -240,6 +249,18 @@
           <div class="seg" id="fastSeg">
             <button data-fast="fasting" class="on">🍚 空腹</button>
             <button data-fast="full">非空腹</button>
+          </div>
+          <div class="meta-row" id="injToggle" style="cursor:pointer">
+            <span>💉 同时记录打针（选填）</span><span id="injArrow">展开 ›</span>
+          </div>
+          <div id="injForm" style="display:none;flex-direction:column;gap:10px">
+            <div class="meta-row"><span>🕐 打针时间</span><input type="time" id="injTime"></div>
+            <div class="seg injConcSeg">
+              <button data-c="2.5">2.5mg</button><button data-c="5" class="on">5mg</button><button data-c="7.5">7.5mg</button><button data-c="10">10mg</button>
+            </div>
+            <div class="meta-row"><span>💧 剂量 (ml)</span><input type="number" id="injDose" step="0.01" min="0" placeholder="如 0.5"></div>
+            <div class="meta-row"><span>📦 第几支</span><input type="number" id="injPen" min="1" placeholder="如 1"></div>
+            <div class="meta-row"><span>🔢 第几针</span><input type="number" id="injShot" min="1" placeholder="如 1"></div>
           </div>
         </div>
         <div class="meta-row">
@@ -265,13 +286,14 @@
   <section class="page" id="page-history">
     <h2>历史记录</h2>
     <div class="seg" id="histKindSeg" style="margin-bottom:10px">
-      <button data-kind="bp" class="on">🩺 血压</button>
-      <button data-kind="weight">⚖️ 体重</button>
+      <button data-kind="weight" class="on">⚖️ 体重</button>
+      <button data-kind="bp">🩺 血压</button>
     </div>
     <div class="stat-card" id="weightStatCard" style="display:none"></div>
     <div class="seg" id="histViewSeg" style="display:none;margin-bottom:10px">
       <button data-v="list" class="on">☰ 列表</button>
       <button data-v="cal">📅 日历</button>
+      <button data-v="inj">💉 打针</button>
     </div>
     <div class="seg" id="histSeg">
       <button data-f="all" class="on">全部</button>
@@ -286,22 +308,23 @@
     <div class="rec-list" id="histList"></div>
     <div id="wListWrap" style="display:none"></div>
     <div id="wCalWrap" style="display:none"></div>
+    <div id="wInjWrap" style="display:none"></div>
   </section>
 
   <!-- 图表页 -->
   <section class="page" id="page-chart">
-    <h2 id="chartTitle">血压趋势</h2>
+    <h2 id="chartTitle">体重趋势</h2>
     <div class="seg" id="chartKindSeg" style="margin-bottom:10px">
-      <button data-kind="bp" class="on">🩺 血压</button>
-      <button data-kind="weight">⚖️ 体重</button>
+      <button data-kind="weight" class="on">⚖️ 体重</button>
+      <button data-kind="bp">🩺 血压</button>
     </div>
     <div class="bmi-card" id="bmiCard" style="display:none"></div>
-    <div class="seg" id="chartSeg" style="margin-bottom:12px">
+    <div class="seg" id="chartSeg" style="margin-bottom:12px;display:none">
       <button data-f="all" class="on">全部</button>
       <button data-f="before">服药前</button>
       <button data-f="after">服药后</button>
     </div>
-    <div class="seg" id="chartSegW" style="margin-bottom:12px;display:none">
+    <div class="seg" id="chartSegW" style="margin-bottom:12px">
       <button data-f="all" class="on">全部</button>
       <button data-f="fasting">空腹</button>
       <button data-f="full">非空腹</button>
@@ -373,6 +396,24 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- ===== 打针记录弹层（日历点日期 / 补录） ===== -->
+<div id="injSheet" style="display:none">
+  <div class="sheet-mask" id="injSheetMask"></div>
+  <div class="sheet">
+    <h4 id="sInjTitle">💉 记录打针</h4>
+    <div class="fld"><span>🕐 打针时间</span><input type="time" id="sInjTime"></div>
+    <div class="seg injConcSeg">
+      <button data-c="2.5">2.5mg</button><button data-c="5" class="on">5mg</button><button data-c="7.5">7.5mg</button><button data-c="10">10mg</button>
+    </div>
+    <div class="fld"><span>💧 剂量 (ml)</span><input type="number" id="sInjDose" step="0.01" min="0" placeholder="如 0.5"></div>
+    <div class="fld"><span>📦 第几支</span><input type="number" id="sInjPen" min="1" placeholder="如 1"></div>
+    <div class="fld"><span>🔢 第几针</span><input type="number" id="sInjShot" min="1" placeholder="如 1"></div>
+    <button class="btn" id="sInjSave">保 存</button>
+    <button class="btn plain" id="sInjDelete" style="display:none;color:var(--danger);background:#fdeeed">删除这天的打针记录</button>
+    <button class="btn plain" id="sInjCancel">取 消</button>
+  </div>
+</div>
+
 <script>
 'use strict';
 /* ================= 工具 ================= */
@@ -431,6 +472,7 @@ function bmiLabel(b) {
 const K_ACCOUNT = 'bpx_account';   // {u, h, salt}
 const K_REMEMBER = 'bpx_remember'; // {u, p} 记住密码
 const K_RECORDS = 'bpx_records';   // [{id, owner, sys, dia, hr, ts, med, note}]
+const K_INJ = 'bpx_injections';    // [{id, owner, ts, conc, doseMl, pen, shot}] 打针记录
 const K_SETTINGS = 'bpx_settings'; // {apiBase, model, apiKey}
 const S_SESSION = 'bpx_session';   // sessionStorage: 已登录用户名
 
@@ -438,6 +480,13 @@ function getRecords() { return LS.get(K_RECORDS, []); }
 function setRecords(list) { LS.set(K_RECORDS, list); }
 function addRecord(r) { const l = getRecords(); l.push(r); setRecords(l); }
 function delRecord(id) { setRecords(getRecords().filter(r => r.id !== id)); }
+
+/* 打针记录：{id, owner, ts, conc, doseMl, pen, shot} */
+function getInj() { return LS.get(K_INJ, []); }
+function setInj(list) { LS.set(K_INJ, list); }
+function addInj(r) { const l = getInj(); l.push(r); setInj(l); }
+function delInj(id) { setInj(getInj().filter(r => r.id !== id)); }
+function injByDayKey(k) { return getInj().filter(r => dayKey(r.ts) === k).sort((a, b) => b.ts - a.ts); }
 
 /* 简单散列（crypto.subtle 不可用时兜底） */
 async function hashPass(salt, pass) {
@@ -550,13 +599,14 @@ function enterApp() {
   resetAddForm();
   loadSettings();
   applyKind();
+  applyChartKind();
   renderRecent();
   goPage('add');
 }
 
 /* ================= 录入页 ================= */
 let curMed = 'before';
-let curKind = 'bp';      // 'bp' | 'weight'
+let curKind = 'weight';  // 'bp' | 'weight'，默认体重
 let curFast = 'fasting'; // 'fasting' | 'full'
 let curUnit = 'kg';      // 当前体重输入单位（kg / jin）
 
@@ -606,6 +656,12 @@ function resetAddForm() {
   $('#wHint').style.display = 'none';
   $('#inNote').value = '';
   $('#inTime').value = toLocalInputValue(Date.now());
+  $('#injForm').style.display = 'none';
+  $('#injArrow').textContent = '展开 ›';
+  $('#injTime').value = '';
+  $('#injDose').value = '';
+  $('#injPen').value = '';
+  $('#injShot').value = '';
   markBadInputs();
 }
 function markBadInputs() {
@@ -625,13 +681,19 @@ function saveRecord() {
   if (curKind === 'weight') {
     const v = parseFloat($('#inWeight').value);
     if (isNaN(v) || v <= 0) { toast('请填写体重'); return; }
+    let inj = null;
+    if (injFormOpen()) {
+      inj = collectInj(ts, '#injTime', '#injDose', '#injPen', '#injShot', $('#injForm .injConcSeg'));
+      if (!inj) return;
+    }
     addRecord(Object.assign(base, { kind: 'weight', kg: Math.round(dispToKg(v, curUnit) * 100) / 100, fast: curFast }));
+    if (inj) addInj(inj);
   } else {
     const sys = +$('#inSys').value, dia = +$('#inDia').value, hr = +$('#inHr').value;
     if (!sys || !dia) { toast('请填写收缩压和舒张压'); return; }
     addRecord(Object.assign(base, { kind: 'bp', sys, dia, hr: hr || null, med: curMed }));
   }
-  toast('已保存 ✓');
+  toast(curKind === 'weight' && injFormOpen() ? '体重 + 打针已保存 ✓' : '已保存 ✓');
   resetAddForm();
   renderRecent();
 }
@@ -676,8 +738,8 @@ function recItemHTML(r, wAsc) {
 }
 
 let histFilter = 'all';
-let histKind = 'bp';
-let histView = 'list';      // 体重模式：list | cal
+let histKind = 'weight';
+let histView = 'list';      // 体重模式：list | cal | inj
 let calCursor = null;       // {y, m} 日历当前月份
 
 function renderHistory() {
@@ -689,10 +751,12 @@ function renderHistory() {
   $('#histList').style.display = isW ? 'none' : '';
   $('#wListWrap').style.display = isW && histView === 'list' ? '' : 'none';
   $('#wCalWrap').style.display = isW && histView === 'cal' ? '' : 'none';
+  $('#wInjWrap').style.display = isW && histView === 'inj' ? '' : 'none';
   if (isW) {
     renderWeightStat();
     if (histView === 'list') renderWeightRows();
-    else renderWeightCal();
+    else if (histView === 'cal') renderWeightCal();
+    else renderInjRows();
     return;
   }
   const list = getRecords()
@@ -759,6 +823,7 @@ function renderWeightRows() {
   const days = weightDays();
   const wrap = $('#wListWrap');
   if (!days.length) { wrap.innerHTML = '<div class="empty">还没有体重记录，去录入一条吧</div>'; return; }
+  const injKeys = new Set(getInj().map(r => dayKey(r.ts)));
   const cell = (r) => r
     ? `<span class="c-w" data-id="${r.id}" title="点击可删除">${Math.round(kgToDisp(r.kg, unit) * 10) / 10}<small>${hm(r.ts)}</small></span>`
     : '<span class="c-w none">—</span>';
@@ -775,7 +840,8 @@ function renderWeightRows() {
       prevFast = g.fasting.kg;
     }
     const [lab, md] = dayLabel(g.ts);
-    return `<div class="wrow"><span class="c-date">${lab}<small>${md}</small></span>${cell(g.fasting)}${cell(g.full)}${df}</div>`;
+    const injMark = injKeys.has(g.key) ? '💉' : '';
+    return `<div class="wrow"><span class="c-date">${lab}<small>${md}${injMark}</small></span>${cell(g.fasting)}${cell(g.full)}${df}</div>`;
   }).reverse().join('');
   wrap.innerHTML = `<div class="wtab"><div class="wrow head"><span class="c-date">日期</span><span class="c-w">🍚 空腹</span><span class="c-w">🌙 非空腹</span><span class="c-df">较前日</span></div>${rows}</div>`;
 }
@@ -789,6 +855,7 @@ function renderWeightCal() {
   // 当月每天的空腹最新值
   const days = weightDays().filter(g => g.fasting);
   const fastByKey = new Map(days.map(g => [g.key, g.fasting.kg]));
+  const injKeys = new Set(getInj().map(r => dayKey(r.ts)));
   // 每格与上一个有空腹记录的日子对比
   const blanks = (new Date(y, m, 1).getDay() + 6) % 7; // 周一开头
   const dim = new Date(y, m + 1, 0).getDate();
@@ -807,7 +874,8 @@ function renderWeightCal() {
     const k = y * 10000 + (m + 1) * 100 + d;
     const kg = fastByKey.get(k);
     const cls = 'cal-cell' + (k === todayKey ? ' today' : '');
-    cells += `<div class="${cls}"><div class="d">${d}</div>` +
+    const dot = injKeys.has(k) ? '<span class="inj-dot">💉</span>' : '';
+    cells += `<div class="${cls}" data-day="${k}" style="cursor:pointer">${dot}<div class="d">${d}</div>` +
       (kg !== undefined
         ? `<div class="w">${Math.round(kgToDisp(kg, unit) * 10) / 10}</div>${diffOf(k, kg)}`
         : '<div class="w" style="color:var(--text-3)">—</div>') +
@@ -819,6 +887,94 @@ function renderWeightCal() {
     <div class="cal-grid">${cells}</div>`;
   $('#calPrev').onclick = () => { calCursor.m--; if (calCursor.m < 0) { calCursor.m = 11; calCursor.y--; } renderWeightCal(); };
   $('#calNext').onclick = () => { calCursor.m++; if (calCursor.m > 11) { calCursor.m = 0; calCursor.y++; } renderWeightCal(); };
+  wrap.querySelector('.cal-grid').addEventListener('click', e => {
+    const cellEl = e.target.closest('.cal-cell[data-day]');
+    if (cellEl) openInjSheet(+cellEl.dataset.day);
+  });
+}
+
+/* ---------- 打针记录 ---------- */
+function injFormOpen() { return $('#injForm').style.display !== 'none'; }
+function injConcOf(segEl) { return segEl.querySelector('button.on')?.dataset.c || '5'; }
+// 从一组输入采集打针记录；dateTs 提供日期，time 输入提供时分。校验失败返回 null
+function collectInj(dateTs, timeId, doseId, penId, shotId, concSeg) {
+  const dose = parseFloat($(doseId).value);
+  const pen = parseInt($(penId).value, 10);
+  const shot = parseInt($(shotId).value, 10);
+  if (!(dose > 0)) { toast('请填写剂量 (ml)'); return null; }
+  if (!(pen >= 1)) { toast('请填写第几支'); return null; }
+  if (!(shot >= 1)) { toast('请填写第几针'); return null; }
+  const d = new Date(dateTs);
+  const t = ($(timeId).value || '').split(':');
+  if (t.length === 2 && t[0] !== '') d.setHours(+t[0], +t[1], 0, 0);
+  return {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    owner: currentUser(),
+    ts: d.getTime(),
+    conc: injConcOf(concSeg),
+    doseMl: dose, pen, shot
+  };
+}
+
+/* 打针视图：行式列表，每针一行 + 当天空腹体重 */
+function renderInjRows() {
+  const wrap = $('#wInjWrap');
+  const unit = getSettings().unit || 'kg';
+  const list = getInj().sort((a, b) => b.ts - a.ts);
+  if (!list.length) {
+    wrap.innerHTML = '<div class="empty">还没有打针记录，可在录入体重时展开"同时记录打针"，或在日历页点日期补录</div>';
+    return;
+  }
+  const fastByKey = new Map(weightDays().map(g => [g.key, g.fasting]));
+  const rows = list.map(r => {
+    const f = fastByKey.get(dayKey(r.ts));
+    const fTxt = f ? Math.round(kgToDisp(f.kg, unit) * 10) / 10 : '—';
+    const d = new Date(r.ts);
+    return `<div class="wrow" data-id="${r.id}" title="点击可删除">
+      <span class="c-date">${d.getMonth() + 1}月${d.getDate()}日<small>${hm(r.ts)}</small></span>
+      <span class="c-w">${r.conc}<small>mg</small></span>
+      <span class="c-w">${r.doseMl}<small>ml</small></span>
+      <span class="c-w">${r.pen}·${r.shot}<small>支·针</small></span>
+      <span class="c-df flat">${fTxt}</span>
+    </div>`;
+  }).join('');
+  wrap.innerHTML = `<div class="wtab"><div class="wrow head"><span class="c-date">日期</span><span class="c-w">浓度</span><span class="c-w">剂量</span><span class="c-w">支·针</span><span class="c-df">🍚空腹</span></div>${rows}</div>`;
+}
+
+/* 打针弹层：日历点日期打开；一天一针（重复保存覆盖当天旧记录） */
+let injSheetDay = null; // 当前弹层对应的 dayKey
+function openInjSheet(k) {
+  injSheetDay = k;
+  const d = new Date(Math.floor(k / 10000), Math.floor(k / 100) % 100 - 1, k % 100);
+  $('#sInjTitle').textContent = `💉 ${d.getMonth() + 1}月${d.getDate()}日 · 记录打针`;
+  const old = injByDayKey(k)[0];
+  $('#sInjTime').value = old ? hm(old.ts) : '';
+  $('#sInjDose').value = old ? old.doseMl : '';
+  $('#sInjPen').value = old ? old.pen : '';
+  $('#sInjShot').value = old ? old.shot : '';
+  $$('#injSheet .injConcSeg button').forEach(b => b.classList.toggle('on', b.dataset.c === (old ? String(old.conc) : '5')));
+  $('#sInjDelete').style.display = old ? '' : 'none';
+  $('#injSheet').style.display = '';
+}
+function closeInjSheet() { $('#injSheet').style.display = 'none'; injSheetDay = null; }
+function saveInjSheet() {
+  if (injSheetDay === null) return;
+  const d = new Date(Math.floor(injSheetDay / 10000), Math.floor(injSheetDay / 100) % 100 - 1, injSheetDay % 100);
+  const inj = collectInj(d.getTime(), '#sInjTime', '#sInjDose', '#sInjPen', '#sInjShot', $('#injSheet .injConcSeg'));
+  if (!inj) return;
+  injByDayKey(injSheetDay).forEach(r => delInj(r.id)); // 一天一针，覆盖旧记录
+  addInj(inj);
+  closeInjSheet();
+  renderHistory();
+  toast('打针记录已保存 ✓');
+}
+function deleteInjSheet() {
+  if (injSheetDay === null) return;
+  if (!confirm('删除这天的打针记录？')) return;
+  injByDayKey(injSheetDay).forEach(r => delInj(r.id));
+  closeInjSheet();
+  renderHistory();
+  toast('已删除');
 }
 
 function renderRecent() {
@@ -833,7 +989,7 @@ function renderRecent() {
 /* ================= 图表 ================= */
 let chartFilter = 'all';
 let chartDays = 7;
-let chartKind = 'bp';
+let chartKind = 'weight';
 
 function updateBmiCard() {
   const el = $('#bmiCard');
@@ -846,6 +1002,15 @@ function updateBmiCard() {
   const okCls = lab === '标准' ? 'ok' : 'warn';
   el.style.display = '';
   el.innerHTML = `<span>BMI <span class="b">${bmi}</span></span><span class="s ${okCls}">${lab} · 身高 ${h}cm</span>`;
+}
+
+// 图表页类型（体重/血压）切换时的界面状态
+function applyChartKind() {
+  const isW = chartKind === 'weight';
+  $('#chartTitle').textContent = isW ? '体重趋势' : '血压趋势';
+  $$('#chartKindSeg button').forEach(x => x.classList.toggle('on', x.dataset.kind === chartKind));
+  $('#chartSeg').style.display = isW ? 'none' : '';
+  $('#chartSegW').style.display = isW ? '' : 'none';
 }
 
 function drawChart() {
@@ -1111,7 +1276,8 @@ function download(filename, content, type) {
 }
 function exportCsv() {
   const list = getRecords().sort((a, b) => a.ts - b.ts);
-  if (!list.length) { toast('暂无数据可导出'); return; }
+  const injs = getInj().sort((a, b) => a.ts - b.ts);
+  if (!list.length && !injs.length) { toast('暂无数据可导出'); return; }
   const esc = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
   const rows = [['类型', '时间', '收缩压', '舒张压', '心率', '体重(kg)', '状态', '备注', '记录人'].join(',')];
   list.forEach(r => {
@@ -1123,27 +1289,40 @@ function exportCsv() {
         r.med === 'before' ? '服药前' : '服药后', esc(r.note), esc(r.owner)].join(','));
     }
   });
+  injs.forEach(r => {
+    rows.push(['打针', esc(new Date(r.ts).toLocaleString('zh-CN')), '', '', '', '', '',
+      esc(`浓度${r.conc}mg · 剂量${r.doseMl}ml · 第${r.pen}支第${r.shot}针`), esc(r.owner)].join(','));
+  });
   download(`生活记录_${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + rows.join('\n'), 'text/csv;charset=utf-8');
   toast('CSV 已导出 ✓');
 }
 function exportJson() {
   const list = getRecords();
-  if (!list.length) { toast('暂无数据可导出'); return; }
-  download(`生活记录备份_${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(list, null, 2), 'application/json');
+  const injs = getInj();
+  if (!list.length && !injs.length) { toast('暂无数据可导出'); return; }
+  download(`生活记录备份_${new Date().toISOString().slice(0, 10)}.json`,
+    JSON.stringify({ records: list, injections: injs }, null, 2), 'application/json');
   toast('备份已导出 ✓');
 }
 function importJson(file) {
   const rd = new FileReader();
   rd.onload = () => {
     try {
-      const data = JSON.parse(rd.result);
-      if (!Array.isArray(data)) throw new Error();
+      let data = JSON.parse(rd.result);
+      let injs = [];
+      if (!Array.isArray(data)) {
+        // 新格式：{records, injections}
+        injs = Array.isArray(data.injections) ? data.injections : [];
+        data = Array.isArray(data.records) ? data.records : [];
+      }
       const valid = data.filter(r => r && r.ts && ((r.sys && r.dia) || (kindOf(r) === 'weight' && r.kg)));
-      if (!valid.length) throw new Error();
+      const validInj = injs.filter(r => r && r.ts && r.doseMl > 0);
+      if (!valid.length && !validInj.length) throw new Error();
+      const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const existing = new Set(getRecords().map(r => r.id));
       const merged = getRecords().concat(valid.map(r => {
         const base = {
-          id: existing.has(r.id) ? r.id + '_imp' : (r.id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6)),
+          id: existing.has(r.id) ? r.id + '_imp' : (r.id || newId()),
           owner: r.owner || currentUser(),
           ts: +r.ts,
           note: r.note || ''
@@ -1154,8 +1333,18 @@ function importJson(file) {
         return Object.assign(base, { kind: 'bp', sys: +r.sys, dia: +r.dia, hr: r.hr ? +r.hr : null, med: r.med === 'after' ? 'after' : 'before' });
       }));
       setRecords(merged);
+      const existingInj = new Set(getInj().map(r => r.id));
+      setInj(getInj().concat(validInj.map(r => ({
+        id: existingInj.has(r.id) ? r.id + '_imp' : (r.id || newId()),
+        owner: r.owner || currentUser(),
+        ts: +r.ts,
+        conc: String(r.conc || '5'),
+        doseMl: +r.doseMl,
+        pen: +r.pen || 1,
+        shot: +r.shot || 1
+      }))));
       renderRecent();
-      toast(`已导入 ${valid.length} 条记录 ✓`, 3000);
+      toast(`已导入 ${valid.length} 条记录${validInj.length ? `、${validInj.length} 条打针` : ''} ✓`, 3000);
     } catch {
       toast('文件格式不正确', 3000);
     }
@@ -1186,6 +1375,31 @@ function bindEvents() {
   });
   $('#unitToggle').addEventListener('click', () => setUnit(curUnit === 'kg' ? 'jin' : 'kg', true));
   $('#inWeight').addEventListener('input', updateWeightHint);
+  // 录入页：展开/收起"同时记录打针"
+  $('#injToggle').addEventListener('click', () => {
+    const open = injFormOpen();
+    $('#injForm').style.display = open ? 'none' : 'flex';
+    $('#injArrow').textContent = open ? '展开 ›' : '收起 ⌄';
+    if (!open && !$('#injTime').value) {
+      const n = new Date();
+      $('#injTime').value = String(n.getHours()).padStart(2, '0') + ':' + String(n.getMinutes()).padStart(2, '0');
+    }
+  });
+  // 两个浓度分段（录入页 + 弹层）共用一套交互
+  $$('.injConcSeg').forEach(seg => seg.addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    seg.querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  }));
+  // 打针弹层按钮
+  $('#sInjSave').onclick = saveInjSheet;
+  $('#sInjCancel').onclick = closeInjSheet;
+  $('#sInjDelete').onclick = deleteInjSheet;
+  $('#injSheetMask').onclick = closeInjSheet;
+  // 打针视图：点行删除该针
+  $('#wInjWrap').addEventListener('click', e => {
+    const row = e.target.closest('.wrow[data-id]'); if (!row) return;
+    if (confirm('删除这条打针记录？')) { delInj(row.dataset.id); renderHistory(); }
+  });
   ['#inSys', '#inDia'].forEach(s => $(s).addEventListener('input', markBadInputs));
   $('#saveBtn').onclick = saveRecord;
 
@@ -1253,11 +1467,7 @@ function bindEvents() {
   $('#chartKindSeg').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     chartKind = b.dataset.kind;
-    $$('#chartKindSeg button').forEach(x => x.classList.toggle('on', x === b));
-    const isW = chartKind === 'weight';
-    $('#chartTitle').textContent = isW ? '体重趋势' : '血压趋势';
-    $('#chartSeg').style.display = isW ? 'none' : '';
-    $('#chartSegW').style.display = isW ? '' : 'none';
+    applyChartKind();
     chartFilter = 'all';
     $$('#chartSeg button, #chartSegW button').forEach(x => x.classList.toggle('on', x.dataset.f === 'all'));
     drawChart();
