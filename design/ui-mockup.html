@@ -170,6 +170,20 @@
   .cal-cell .cd.down { color: var(--ok); }
   .cal-cell .cd.up { color: var(--danger); }
   .cal-cell.blank { background: none; box-shadow: none; }
+  /* 打针功能 */
+  .cal-cell { position: relative; }
+  .inj-dot { position: absolute; top: 2px; right: 3px; font-size: 8px; line-height: 1; }
+  .sheet-mask { position: absolute; inset: 0; background: rgba(30,40,55,.45); z-index: 8; }
+  .sheet { position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 20px 20px 0 0; padding: 16px 16px 20px; z-index: 9; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 -6px 24px rgba(0,0,0,.15); }
+  .sheet h4 { font-size: 14px; text-align: center; }
+  .sheet .fld { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text-2); background: var(--bg); border-radius: 999px; padding: 9px 14px; }
+  .chip-row { display: flex; gap: 6px; }
+  .chip-row span { flex: 1; text-align: center; font-size: 11px; padding: 7px 0; border-radius: 999px; background: #e6edf7; color: var(--text-2); }
+  .chip-row span.on { background: var(--primary); color: #fff; font-weight: 700; }
+  .inj-card { background: #fff; border-radius: var(--radius); padding: 12px 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .inj-card .t1 { font-size: 14px; font-weight: 700; }
+  .inj-card .t2 { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+  .inj-card .t3 { font-size: 11px; color: var(--text-3); margin-top: 4px; }
   /* 体重·紧凑行式列表 */
   .wtab { background: #fff; border-radius: var(--radius); box-shadow: 0 3px 12px rgba(70,100,140,.07); overflow: hidden; }
   .wrow { display: flex; align-items: center; padding: 6px 14px; font-size: 13px; }
@@ -421,6 +435,7 @@
           </div>
           <div class="seg"><div class="on">🍚 空腹</div><div>非空腹</div></div>
           <div class="m-meta"><span>🕐 测量时间</span><span>今天 07:05 ›</span></div>
+          <div class="m-meta"><span>💉 同时记录打针（选填）</span><span>展开 ›</span></div>
           <div class="m-btn">保 存</div>
           <div class="cam-fab">
             <div class="circle">📷</div>
@@ -434,7 +449,7 @@
           <div><div class="ico"></div>设置</div>
         </div>
       </div>
-      <div class="label">⑤ 录入页（切到体重模式）</div>
+      <div class="label">⑤ 录入页（默认进入就是体重；可展开"同时记录打针"）</div>
     </div>
 
     <!-- 6 记录页-体重 -->
@@ -449,7 +464,7 @@
             <div class="stat-sub">相比最初 73.7 kg（5月1日 首次记录）</div>
             <div class="stat-sub">BMI 22.9 · 标准 · 身高 175cm</div>
           </div>
-          <div class="seg"><div class="on">☰ 列表</div><div>📅 日历</div></div>
+          <div class="seg"><div class="on">☰ 列表</div><div>📅 日历</div><div>💉 打针</div></div>
           <div class="wtab">
             <div class="wrow head"><span class="c-date">日期</span><span class="c-w">🍚 空腹</span><span class="c-w">🌙 非空腹</span><span class="c-df">较前日</span></div>
             <div class="wrow">
@@ -459,7 +474,7 @@
               <span class="c-df down">↓0.4</span>
             </div>
             <div class="wrow">
-              <span class="c-date">昨天<small>8月8日</small></span>
+              <span class="c-date">昨天 💉<small>8月8日</small></span>
               <span class="c-w">70.9<small>07:12</small></span>
               <span class="c-w">70.9<small>21:40</small></span>
               <span class="c-df down">↓0.2</span>
@@ -579,7 +594,7 @@
         <div class="m-statusbar"></div>
         <div class="m-body">
           <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
-          <div class="seg"><div>☰ 列表</div><div class="on">📅 日历</div></div>
+          <div class="seg"><div>☰ 列表</div><div class="on">📅 日历</div><div>💉 打针</div></div>
           <div class="cal-head"><span>‹</span><b>2026年8月</b><span>›</span></div>
           <div class="cal-week"><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div></div>
           <div class="cal-grid">
@@ -591,7 +606,7 @@
             <div class="cal-cell"><div class="d">5</div><div class="w">72.1</div><div class="cd down">↓0.7</div></div>
             <div class="cal-cell"><div class="d">6</div><div class="w">71.5</div><div class="cd down">↓0.6</div></div>
             <div class="cal-cell"><div class="d">7</div><div class="w" style="color:var(--text-3)">—</div></div>
-            <div class="cal-cell"><div class="d">8</div><div class="w">70.9</div><div class="cd down">↓0.6</div></div>
+            <div class="cal-cell"><span class="inj-dot">💉</span><div class="d">8</div><div class="w">70.9</div><div class="cd down">↓0.6</div></div>
             <div class="cal-cell today"><div class="d">9</div><div class="w">70.5</div><div class="cd down">↓0.4</div></div>
             <div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div>
           </div>
@@ -603,7 +618,67 @@
           <div><div class="ico"></div>设置</div>
         </div>
       </div>
-      <div class="label">⑨ 记录页（体重·日历视图）</div>
+      <div class="label">⑨ 日历视图（打针日右上角带 💉 角标）</div>
+    </div>
+
+    <!-- 10 日历点日期 → 打针表单弹层 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
+          <div class="seg"><div>☰ 列表</div><div class="on">📅 日历</div><div>💉 打针</div></div>
+          <div class="cal-head"><span>‹</span><b>2026年8月</b><span>›</span></div>
+          <div class="cal-grid">
+            <div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div>
+            <div class="cal-cell"><div class="d">1</div><div class="w">73.7</div></div>
+            <div class="cal-cell"><div class="d">2</div></div>
+            <div class="cal-cell"><div class="d">3</div><div class="w">72.8</div></div>
+            <div class="cal-cell"><div class="d">4</div></div>
+            <div class="cal-cell"><div class="d">5</div><div class="w">72.1</div></div>
+            <div class="cal-cell"><div class="d">6</div><div class="w">71.5</div></div>
+            <div class="cal-cell"><div class="d">7</div></div>
+            <div class="cal-cell"><span class="inj-dot">💉</span><div class="d">8</div><div class="w">70.9</div></div>
+          </div>
+        </div>
+        <div class="sheet-mask"></div>
+        <div class="sheet">
+          <h4>💉 8月8日 · 记录打针</h4>
+          <div class="fld"><span>🕐 时间点</span><span>07:30 ›</span></div>
+          <div class="chip-row"><span>2.5mg</span><span class="on">5mg</span><span>7.5mg</span><span>10mg</span></div>
+          <div class="fld"><span>💧 剂量</span><span>0.5 ml ›</span></div>
+          <div class="fld"><span>📦 第几支</span><span>第 2 支 ›</span></div>
+          <div class="fld"><span>🔢 第几针</span><span>第 3 针 ›</span></div>
+          <div class="m-btn">保 存</div>
+        </div>
+      </div>
+      <div class="label">⑩ 日历点某天 → 底部弹出打针表单（可补录）</div>
+    </div>
+
+    <!-- 11 打针视图 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
+          <div class="seg"><div>☰ 列表</div><div>📅 日历</div><div class="on">💉 打针</div></div>
+          <div class="wtab">
+            <div class="wrow head"><span class="c-date">日期</span><span class="c-w">浓度</span><span class="c-w">剂量</span><span class="c-w">支·针</span><span class="c-df">🍚空腹</span></div>
+            <div class="wrow"><span class="c-date">8月8日<small>07:30</small></span><span class="c-w">5<small>mg</small></span><span class="c-w">0.5<small>ml</small></span><span class="c-w">2·3<small>支·针</small></span><span class="c-df flat">70.9</span></div>
+            <div class="wrow"><span class="c-date">8月1日<small>07:15</small></span><span class="c-w">5<small>mg</small></span><span class="c-w">0.5<small>ml</small></span><span class="c-w">2·2<small>支·针</small></span><span class="c-df flat">73.7</span></div>
+            <div class="wrow"><span class="c-date">7月25日<small>08:02</small></span><span class="c-w">2.5<small>mg</small></span><span class="c-w">0.25<small>ml</small></span><span class="c-w">2·1<small>支·针</small></span><span class="c-df flat">—</span></div>
+          </div>
+        </div>
+        <div class="m-tabbar">
+          <div><div class="ico"></div>录入</div>
+          <div class="on"><div class="ico"></div>记录</div>
+          <div><div class="ico"></div>图表</div>
+          <div><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">⑪ 打针视图（行式列表：每针一行 + 当天空腹体重，点行可删除）</div>
     </div>
   </div>
 
@@ -611,9 +686,10 @@
   <div class="note">Web 端沿用现有左右分栏：左侧录入卡片顶部同样有"血压 / 体重"切换，切到体重后表单变为体重版；右栏最近记录跟随切换。图表页和记录页同样加顶部切换，布局不变。体重日历在 Web 端加宽展示，交互不变。</div>
 
   <div class="feedback">
-    <b>请确认：</b>① 列表改成"每天一行"的紧凑表格（日期 | 🍚空腹 | 🌙非空腹 | 较前日涨幅），这个密度可以吗？
-    ② 当天同状态多条取最新一条展示，可以吗？③ "较前日"列是空腹与上一记录日的对比（绿↓红↑），没测空腹的日子显示"—"，OK 吗？
-    日历视图已确认。确认后开始开发。
+    <b>请确认打针功能设计：</b>① 进入 app 默认显示体重模式（血压仍可顶部切换）OK？
+    ② 录入页加"💉 同时记录打针（选填）"展开行，日历点某天可补录——两个入口够吗？
+    ③ 列表行日期旁和日历格子右上角加 💉 小角标（不改变现有布局大小）OK？
+    ④ "💉 打针"视图：行式列表（表头：日期/浓度/剂量/支·针/🍚空腹），点行可删除。✅ 已确认并开发上线。
   </div>
 
 </div>
