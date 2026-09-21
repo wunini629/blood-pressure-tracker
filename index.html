@@ -150,6 +150,7 @@
   .wrow .c-w small { display: block; font-weight: 400; color: var(--text-3); font-size: 9px; }
   .wrow .c-w.none { color: var(--text-3); font-weight: 400; }
   .wrow .c-df { flex: .8; text-align: right; font-weight: 700; font-size: 12px; }
+  .wrow .c-df small { display: block; font-weight: 400; font-size: 9px; opacity: .85; }
   .wrow .c-df.down { color: var(--ok); }
   .wrow .c-df.up { color: var(--danger); }
   .wrow .c-df.flat { color: var(--text-3); font-weight: 400; }
@@ -258,7 +259,6 @@
             <div class="seg injConcSeg">
               <button data-c="2.5">2.5mg</button><button data-c="5" class="on">5mg</button><button data-c="7.5">7.5mg</button><button data-c="10">10mg</button>
             </div>
-            <div class="meta-row"><span>💧 剂量 (ml)</span><input type="number" id="injDose" step="0.01" min="0" placeholder="如 0.5"></div>
             <div class="meta-row"><span>📦 第几支</span><input type="number" id="injPen" min="1" placeholder="如 1"></div>
             <div class="meta-row"><span>🔢 第几针</span><input type="number" id="injShot" min="1" placeholder="如 1"></div>
           </div>
@@ -405,7 +405,6 @@
     <div class="seg injConcSeg">
       <button data-c="2.5">2.5mg</button><button data-c="5" class="on">5mg</button><button data-c="7.5">7.5mg</button><button data-c="10">10mg</button>
     </div>
-    <div class="fld"><span>💧 剂量 (ml)</span><input type="number" id="sInjDose" step="0.01" min="0" placeholder="如 0.5"></div>
     <div class="fld"><span>📦 第几支</span><input type="number" id="sInjPen" min="1" placeholder="如 1"></div>
     <div class="fld"><span>🔢 第几针</span><input type="number" id="sInjShot" min="1" placeholder="如 1"></div>
     <button class="btn" id="sInjSave">保 存</button>
@@ -454,7 +453,7 @@ function isLow(r) { return r.sys <= 90 || r.dia <= 60; }
 function kindOf(r) { return r.kind === 'weight' ? 'weight' : 'bp'; } // 老数据无 kind 视为血压
 function kgToDisp(kg, unit) { return unit === 'jin' ? kg * 2 : kg; }
 function dispToKg(v, unit) { return unit === 'jin' ? v / 2 : v; }
-function fmtW(kg, unit) { return (Math.round(kgToDisp(kg, unit) * 10) / 10) + ' ' + (unit === 'jin' ? '斤' : 'kg'); }
+function fmtW(kg, unit) { return kgToDisp(kg, unit).toFixed(2) + ' ' + (unit === 'jin' ? '斤' : 'kg'); }
 function bmiOf(kg) {
   const h = +getSettings().height;
   if (!h || !kg) return null;
@@ -472,7 +471,7 @@ function bmiLabel(b) {
 const K_ACCOUNT = 'bpx_account';   // {u, h, salt}
 const K_REMEMBER = 'bpx_remember'; // {u, p} 记住密码
 const K_RECORDS = 'bpx_records';   // [{id, owner, sys, dia, hr, ts, med, note}]
-const K_INJ = 'bpx_injections';    // [{id, owner, ts, conc, doseMl, pen, shot}] 打针记录
+const K_INJ = 'bpx_injections';    // [{id, owner, ts, conc, pen, shot}] 打针记录
 const K_SETTINGS = 'bpx_settings'; // {apiBase, model, apiKey}
 const S_SESSION = 'bpx_session';   // sessionStorage: 已登录用户名
 
@@ -481,7 +480,7 @@ function setRecords(list) { LS.set(K_RECORDS, list); }
 function addRecord(r) { const l = getRecords(); l.push(r); setRecords(l); }
 function delRecord(id) { setRecords(getRecords().filter(r => r.id !== id)); }
 
-/* 打针记录：{id, owner, ts, conc, doseMl, pen, shot} */
+/* 打针记录：{id, owner, ts, conc, pen, shot} */
 function getInj() { return LS.get(K_INJ, []); }
 function setInj(list) { LS.set(K_INJ, list); }
 function addInj(r) { const l = getInj(); l.push(r); setInj(l); }
@@ -623,7 +622,7 @@ function applyKind() {
 function setUnit(u, keepValue) {
   const inp = $('#inWeight');
   const v = parseFloat(inp.value);
-  if (keepValue && !isNaN(v)) inp.value = Math.round(kgToDisp(dispToKg(v, curUnit), u) * 10) / 10;
+  if (keepValue && !isNaN(v)) inp.value = kgToDisp(dispToKg(v, curUnit), u).toFixed(2);
   curUnit = u;
   $('#wUnitLabel').textContent = u === 'jin' ? '斤' : 'kg';
   $('#unitToggle').textContent = (u === 'jin' ? '斤' : 'kg') + ' ⇄ ' + (u === 'jin' ? 'kg' : '斤');
@@ -639,13 +638,13 @@ function updateWeightHint() {
   const v = parseFloat($('#inWeight').value);
   const prev = lastWeightKg();
   if (isNaN(v) || prev === null) { el.style.display = 'none'; return; }
-  const diff = Math.round((dispToKg(v, curUnit) - prev) * 10) / 10;
+  const diff = Math.round((dispToKg(v, curUnit) - prev) * 100) / 100;
   if (diff === 0) { el.style.display = 'none'; return; }
   const d = Math.abs(kgToDisp(diff, curUnit));
   const u = curUnit === 'jin' ? '斤' : 'kg';
   el.style.display = '';
   el.className = 'hint ' + (diff < 0 ? 'down' : 'up');
-  el.textContent = `较上次 ${diff < 0 ? '↓' : '↑'} ${(Math.round(d * 10) / 10)} ${u}`;
+  el.textContent = `较上次 ${diff < 0 ? '↓' : '↑'} ${d.toFixed(2)} ${u}`;
 }
 
 function resetAddForm() {
@@ -659,7 +658,6 @@ function resetAddForm() {
   $('#injForm').style.display = 'none';
   $('#injArrow').textContent = '展开 ›';
   $('#injTime').value = '';
-  $('#injDose').value = '';
   $('#injPen').value = '';
   $('#injShot').value = '';
   markBadInputs();
@@ -683,7 +681,7 @@ function saveRecord() {
     if (isNaN(v) || v <= 0) { toast('请填写体重'); return; }
     let inj = null;
     if (injFormOpen()) {
-      inj = collectInj(ts, '#injTime', '#injDose', '#injPen', '#injShot', $('#injForm .injConcSeg'));
+      inj = collectInj(ts, '#injTime', '#injPen', '#injShot', $('#injForm .injConcSeg'));
       if (!inj) return;
     }
     addRecord(Object.assign(base, { kind: 'weight', kg: Math.round(dispToKg(v, curUnit) * 100) / 100, fast: curFast }));
@@ -706,9 +704,9 @@ function weightChangeHTML(r, sortedAsc) {
   if (i <= 0) return '<small>—</small>';
   const unit = getSettings().unit || 'kg';
   const diff = kgToDisp(r.kg - same[i - 1].kg, unit);
-  if (Math.abs(diff) < 0.05) return '<small>持平</small>';
+  if (Math.abs(diff) < 0.005) return '<small>持平</small>';
   const lab = st === 'full' ? '非空腹' : '空腹';
-  return `<small>较上次${lab} ${diff < 0 ? '↓' : '↑'} ${Math.abs(Math.round(diff * 10) / 10)}</small>`;
+  return `<small>较上次${lab} ${diff < 0 ? '↓' : '↑'} ${Math.abs(diff).toFixed(2)}</small>`;
 }
 function recItemHTML(r, wAsc) {
   if (kindOf(r) === 'weight') {
@@ -778,18 +776,21 @@ function renderWeightStat() {
   const diff = kgToDisp(latest.kg - first.kg, unit);
   const u = unit === 'jin' ? '斤' : 'kg';
   let main;
-  if (Math.abs(diff) < 0.05) main = '📊 累计 持平';
-  else if (diff < 0) main = `📉 累计 <span class="g">↓ ${Math.abs(Math.round(diff * 10) / 10)} ${u}</span>`;
-  else main = `📈 累计 <span class="r">↑ ${(Math.round(diff * 10) / 10)} ${u}</span>`;
+  if (Math.abs(diff) < 0.005) main = '📊 累计 持平';
+  else if (diff < 0) main = `📉 累计 <span class="g">↓ ${Math.abs(diff).toFixed(2)} ${u}</span>`;
+  else main = `📈 累计 <span class="r">↑ ${Math.abs(diff).toFixed(2)} ${u}</span>`;
   const fd = new Date(first.ts);
   const sub = asc.length > 1
     ? `相比最初 ${fmtW(first.kg, unit)}（${fd.getMonth() + 1}月${fd.getDate()}日 首次记录）`
     : '这是第一条体重记录';
+  const minRec = asc.reduce((m, r) => (r.kg < m.kg ? r : m), asc[0]);
+  const md = new Date(minRec.ts);
+  const minLine = `🏆 历史最低 ${fmtW(minRec.kg, unit)}（${md.getMonth() + 1}月${md.getDate()}日）`;
   const bmi = bmiOf(latest.kg);
   const bmiLine = bmi !== null
     ? `BMI ${bmi} · ${bmiLabel(bmi)} · 身高 ${getSettings().height}cm`
     : '在设置页填写身高后可显示 BMI';
-  el.innerHTML = `<div class="stat-main">${main}</div><div class="stat-sub">${sub}</div><div class="stat-sub">${bmiLine}</div>`;
+  el.innerHTML = `<div class="stat-main">${main}</div><div class="stat-sub">${sub}</div><div class="stat-sub">${minLine}</div><div class="stat-sub">${bmiLine}</div>`;
 }
 
 /* ---------- 体重：行式列表 ---------- */
@@ -825,7 +826,7 @@ function renderWeightRows() {
   if (!days.length) { wrap.innerHTML = '<div class="empty">还没有体重记录，去录入一条吧</div>'; return; }
   const injKeys = new Set(getInj().map(r => dayKey(r.ts)));
   const cell = (r) => r
-    ? `<span class="c-w" data-id="${r.id}" title="点击可删除">${Math.round(kgToDisp(r.kg, unit) * 10) / 10}<small>${hm(r.ts)}</small></span>`
+    ? `<span class="c-w" data-id="${r.id}" title="点击可删除">${kgToDisp(r.kg, unit).toFixed(2)}<small>${hm(r.ts)}</small></span>`
     : '<span class="c-w none">—</span>';
   // 空腹较前日（上一个有空腹记录的日子）
   let prevFast = null;
@@ -834,8 +835,8 @@ function renderWeightRows() {
     if (g.fasting) {
       if (prevFast !== null) {
         const diff = kgToDisp(g.fasting.kg - prevFast, unit);
-        if (Math.abs(diff) < 0.05) df = '<span class="c-df flat">持平</span>';
-        else df = `<span class="c-df ${diff < 0 ? 'down' : 'up'}">${diff < 0 ? '↓' : '↑'}${Math.abs(Math.round(diff * 10) / 10)}</span>`;
+        if (Math.abs(diff) < 0.005) df = '<span class="c-df flat">持平</span>';
+        else df = `<span class="c-df ${diff < 0 ? 'down' : 'up'}">${diff < 0 ? '↓' : '↑'}${Math.abs(diff).toFixed(2)}</span>`;
       }
       prevFast = g.fasting.kg;
     }
@@ -866,8 +867,8 @@ function renderWeightCal() {
     const prev = days.filter(g => g.key < k).pop();
     if (!prev) return '<div class="cd" style="color:var(--text-3)">首日</div>';
     const diff = kgToDisp(kg - prev.fasting.kg, unit);
-    if (Math.abs(diff) < 0.05) return '<div class="cd">持平</div>';
-    return `<div class="cd ${diff < 0 ? 'down' : 'up'}">${diff < 0 ? '↓' : '↑'}${Math.abs(Math.round(diff * 10) / 10)}</div>`;
+    if (Math.abs(diff) < 0.005) return '<div class="cd">持平</div>';
+    return `<div class="cd ${diff < 0 ? 'down' : 'up'}">${diff < 0 ? '↓' : '↑'}${Math.abs(diff).toFixed(2)}</div>`;
   };
   let cells = '<div class="cal-cell blank"></div>'.repeat(blanks);
   for (let d = 1; d <= dim; d++) {
@@ -877,7 +878,7 @@ function renderWeightCal() {
     const dot = injKeys.has(k) ? '<span class="inj-dot">💉</span>' : '';
     cells += `<div class="${cls}" data-day="${k}" style="cursor:pointer">${dot}<div class="d">${d}</div>` +
       (kg !== undefined
-        ? `<div class="w">${Math.round(kgToDisp(kg, unit) * 10) / 10}</div>${diffOf(k, kg)}`
+        ? `<div class="w">${kgToDisp(kg, unit).toFixed(2)}</div>${diffOf(k, kg)}`
         : '<div class="w" style="color:var(--text-3)">—</div>') +
       '</div>';
   }
@@ -897,11 +898,9 @@ function renderWeightCal() {
 function injFormOpen() { return $('#injForm').style.display !== 'none'; }
 function injConcOf(segEl) { return segEl.querySelector('button.on')?.dataset.c || '5'; }
 // 从一组输入采集打针记录；dateTs 提供日期，time 输入提供时分。校验失败返回 null
-function collectInj(dateTs, timeId, doseId, penId, shotId, concSeg) {
-  const dose = parseFloat($(doseId).value);
+function collectInj(dateTs, timeId, penId, shotId, concSeg) {
   const pen = parseInt($(penId).value, 10);
   const shot = parseInt($(shotId).value, 10);
-  if (!(dose > 0)) { toast('请填写剂量 (ml)'); return null; }
   if (!(pen >= 1)) { toast('请填写第几支'); return null; }
   if (!(shot >= 1)) { toast('请填写第几针'); return null; }
   const d = new Date(dateTs);
@@ -912,11 +911,11 @@ function collectInj(dateTs, timeId, doseId, penId, shotId, concSeg) {
     owner: currentUser(),
     ts: d.getTime(),
     conc: injConcOf(concSeg),
-    doseMl: dose, pen, shot
+    pen, shot
   };
 }
 
-/* 打针视图：行式列表，每针一行 + 当天空腹体重 */
+/* 打针视图：行式列表，每针一行 + 当天空腹体重（较上一针涨跌） */
 function renderInjRows() {
   const wrap = $('#wInjWrap');
   const unit = getSettings().unit || 'kg';
@@ -926,19 +925,37 @@ function renderInjRows() {
     return;
   }
   const fastByKey = new Map(weightDays().map(g => [g.key, g.fasting]));
+  // 按时间正序找出每一针的"上一针空腹体重"（跳过没记空腹的针）
+  const prevFastById = new Map();
+  let prevKg = null;
+  list.slice().reverse().forEach(r => {
+    const f = fastByKey.get(dayKey(r.ts));
+    prevFastById.set(r.id, f ? prevKg : undefined);
+    if (f) prevKg = f.kg;
+  });
   const rows = list.map(r => {
     const f = fastByKey.get(dayKey(r.ts));
-    const fTxt = f ? Math.round(kgToDisp(f.kg, unit) * 10) / 10 : '—';
     const d = new Date(r.ts);
+    let fCell = '<span class="c-df flat">—</span>';
+    if (f) {
+      const cur = kgToDisp(f.kg, unit).toFixed(2);
+      const prev = prevFastById.get(r.id);
+      if (prev === null || prev === undefined) {
+        fCell = `<span class="c-df flat">${cur}</span>`;
+      } else {
+        const diff = kgToDisp(f.kg - prev, unit);
+        if (Math.abs(diff) < 0.005) fCell = `<span class="c-df flat">${cur}<small>持平</small></span>`;
+        else fCell = `<span class="c-df ${diff < 0 ? 'down' : 'up'}">${cur}<small>${diff < 0 ? '↓' : '↑'}${Math.abs(diff).toFixed(2)}</small></span>`;
+      }
+    }
     return `<div class="wrow" data-id="${r.id}" title="点击可删除">
       <span class="c-date">${d.getMonth() + 1}月${d.getDate()}日<small>${hm(r.ts)}</small></span>
       <span class="c-w">${r.conc}<small>mg</small></span>
-      <span class="c-w">${r.doseMl}<small>ml</small></span>
       <span class="c-w">${r.pen}·${r.shot}<small>支·针</small></span>
-      <span class="c-df flat">${fTxt}</span>
+      ${fCell}
     </div>`;
   }).join('');
-  wrap.innerHTML = `<div class="wtab"><div class="wrow head"><span class="c-date">日期</span><span class="c-w">浓度</span><span class="c-w">剂量</span><span class="c-w">支·针</span><span class="c-df">🍚空腹</span></div>${rows}</div>`;
+  wrap.innerHTML = `<div class="wtab"><div class="wrow head"><span class="c-date">日期</span><span class="c-w">浓度</span><span class="c-w">支·针</span><span class="c-df">🍚空腹</span></div>${rows}</div>`;
 }
 
 /* 打针弹层：日历点日期打开；一天一针（重复保存覆盖当天旧记录） */
@@ -949,7 +966,6 @@ function openInjSheet(k) {
   $('#sInjTitle').textContent = `💉 ${d.getMonth() + 1}月${d.getDate()}日 · 记录打针`;
   const old = injByDayKey(k)[0];
   $('#sInjTime').value = old ? hm(old.ts) : '';
-  $('#sInjDose').value = old ? old.doseMl : '';
   $('#sInjPen').value = old ? old.pen : '';
   $('#sInjShot').value = old ? old.shot : '';
   $$('#injSheet .injConcSeg button').forEach(b => b.classList.toggle('on', b.dataset.c === (old ? String(old.conc) : '5')));
@@ -960,7 +976,7 @@ function closeInjSheet() { $('#injSheet').style.display = 'none'; injSheetDay = 
 function saveInjSheet() {
   if (injSheetDay === null) return;
   const d = new Date(Math.floor(injSheetDay / 10000), Math.floor(injSheetDay / 100) % 100 - 1, injSheetDay % 100);
-  const inj = collectInj(d.getTime(), '#sInjTime', '#sInjDose', '#sInjPen', '#sInjShot', $('#injSheet .injConcSeg'));
+  const inj = collectInj(d.getTime(), '#sInjTime', '#sInjPen', '#sInjShot', $('#injSheet .injConcSeg'));
   if (!inj) return;
   injByDayKey(injSheetDay).forEach(r => delInj(r.id)); // 一天一针，覆盖旧记录
   addInj(inj);
@@ -1204,7 +1220,7 @@ async function recognizePhoto(file) {
     const v = JSON.parse(m[0]);
     if (isW) {
       if (!v.weight) throw new Error('未识别到数值，请手动输入');
-      $('#inWeight').value = Math.round(kgToDisp(+v.weight, curUnit) * 10) / 10;
+      $('#inWeight').value = kgToDisp(+v.weight, curUnit).toFixed(2);
       updateWeightHint();
     } else {
       if (v.systolic) $('#inSys').value = Math.round(v.systolic);
@@ -1291,7 +1307,7 @@ function exportCsv() {
   });
   injs.forEach(r => {
     rows.push(['打针', esc(new Date(r.ts).toLocaleString('zh-CN')), '', '', '', '', '',
-      esc(`浓度${r.conc}mg · 剂量${r.doseMl}ml · 第${r.pen}支第${r.shot}针`), esc(r.owner)].join(','));
+      esc(`浓度${r.conc}mg · 第${r.pen}支第${r.shot}针`), esc(r.owner)].join(','));
   });
   download(`生活记录_${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + rows.join('\n'), 'text/csv;charset=utf-8');
   toast('CSV 已导出 ✓');
@@ -1316,7 +1332,7 @@ function importJson(file) {
         data = Array.isArray(data.records) ? data.records : [];
       }
       const valid = data.filter(r => r && r.ts && ((r.sys && r.dia) || (kindOf(r) === 'weight' && r.kg)));
-      const validInj = injs.filter(r => r && r.ts && r.doseMl > 0);
+      const validInj = injs.filter(r => r && r.ts && (r.pen >= 1 || r.shot >= 1 || r.doseMl > 0));
       if (!valid.length && !validInj.length) throw new Error();
       const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const existing = new Set(getRecords().map(r => r.id));
@@ -1339,7 +1355,6 @@ function importJson(file) {
         owner: r.owner || currentUser(),
         ts: +r.ts,
         conc: String(r.conc || '5'),
-        doseMl: +r.doseMl,
         pen: +r.pen || 1,
         shot: +r.shot || 1
       }))));
