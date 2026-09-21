@@ -195,6 +195,7 @@
   .wrow .c-w small { display: block; font-weight: 400; color: var(--text-3); font-size: 9px; }
   .wrow .c-w.none { color: var(--text-3); font-weight: 400; }
   .wrow .c-df { flex: .8; text-align: right; font-weight: 700; font-size: 12px; }
+  .wrow .c-df small { display: block; font-weight: 400; font-size: 9px; opacity: .85; }
   .wrow .c-df.down { color: var(--ok); }
   .wrow .c-df.up { color: var(--danger); }
   .wrow .c-df.flat { color: var(--text-3); font-weight: 400; }
@@ -430,12 +431,16 @@
           <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
           <div class="weight-card">
             <div class="unit-toggle">kg ⇄ 斤</div>
-            <div class="wv">70.5<span class="wu">kg</span></div>
-            <div class="hint down">较上次 ↓ 0.6 kg</div>
+            <div class="wv">70.50<span class="wu">kg</span></div>
+            <div class="hint down">较上次 ↓ 0.60 kg</div>
           </div>
           <div class="seg"><div class="on">🍚 空腹</div><div>非空腹</div></div>
           <div class="m-meta"><span>🕐 测量时间</span><span>今天 07:05 ›</span></div>
-          <div class="m-meta"><span>💉 同时记录打针（选填）</span><span>展开 ›</span></div>
+          <div class="m-meta"><span>💉 同时记录打针（选填）</span><span>收起 ⌄</span></div>
+          <div class="m-meta"><span>🕐 打针时间</span><span>07:30 ›</span></div>
+          <div class="chip-row"><span>2.5mg</span><span class="on">5mg</span><span>7.5mg</span><span>10mg</span></div>
+          <div class="m-meta"><span>📦 第几支</span><span>第 2 支 ›</span></div>
+          <div class="m-meta"><span>🔢 第几针</span><span>第 3 针 ›</span></div>
           <div class="m-btn">保 存</div>
           <div class="cam-fab">
             <div class="circle">📷</div>
@@ -449,7 +454,7 @@
           <div><div class="ico"></div>设置</div>
         </div>
       </div>
-      <div class="label">⑤ 录入页（默认进入就是体重；可展开"同时记录打针"）</div>
+      <div class="label">⑤ 录入页（体重保留 2 位小数；打针字段去掉"剂量ml"，只剩：时间/浓度/第几支/第几针）</div>
     </div>
 
     <!-- 6 记录页-体重 -->
@@ -460,8 +465,9 @@
         <div class="m-body">
           <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
           <div class="stat-card">
-            <div class="stat-main">📉 累计 <span class="g">↓ 3.2 kg</span></div>
-            <div class="stat-sub">相比最初 73.7 kg（5月1日 首次记录）</div>
+            <div class="stat-main">📉 累计 <span class="g">↓ 3.20 kg</span></div>
+            <div class="stat-sub">相比最初 73.70 kg（8月1日 首次记录）</div>
+            <div class="stat-sub">🏆 历史最低 70.50 kg（8月9日）</div>
             <div class="stat-sub">BMI 22.9 · 标准 · 身高 175cm</div>
           </div>
           <div class="seg"><div class="on">☰ 列表</div><div>📅 日历</div><div>💉 打针</div></div>
@@ -469,43 +475,43 @@
             <div class="wrow head"><span class="c-date">日期</span><span class="c-w">🍚 空腹</span><span class="c-w">🌙 非空腹</span><span class="c-df">较前日</span></div>
             <div class="wrow">
               <span class="c-date">今天<small>8月9日</small></span>
-              <span class="c-w">70.5<small>07:05</small></span>
-              <span class="c-w">71.1<small>22:10</small></span>
-              <span class="c-df down">↓0.4</span>
+              <span class="c-w">70.50<small>07:05</small></span>
+              <span class="c-w">71.10<small>22:10</small></span>
+              <span class="c-df down">↓0.40</span>
             </div>
             <div class="wrow">
               <span class="c-date">昨天 💉<small>8月8日</small></span>
-              <span class="c-w">70.9<small>07:12</small></span>
-              <span class="c-w">70.9<small>21:40</small></span>
-              <span class="c-df down">↓0.2</span>
+              <span class="c-w">70.90<small>07:12</small></span>
+              <span class="c-w">70.90<small>21:40</small></span>
+              <span class="c-df down">↓0.20</span>
             </div>
             <div class="wrow">
               <span class="c-date">周三<small>8月5日</small></span>
-              <span class="c-w">72.1<small>07:20</small></span>
+              <span class="c-w">72.10<small>07:20</small></span>
               <span class="c-w none">—</span>
-              <span class="c-df up">↑0.3</span>
+              <span class="c-df up">↑0.30</span>
             </div>
             <div class="wrow">
               <span class="c-date">周二<small>8月4日</small></span>
               <span class="c-w none">—</span>
-              <span class="c-w">72.4<small>21:55</small></span>
+              <span class="c-w">72.40<small>21:55</small></span>
               <span class="c-df flat">—</span>
             </div>
             <div class="wrow">
               <span class="c-date">周一<small>8月3日</small></span>
-              <span class="c-w">71.8<small>07:08</small></span>
-              <span class="c-w">72.2<small>22:03</small></span>
-              <span class="c-df down">↓1.0</span>
+              <span class="c-w">71.80<small>07:08</small></span>
+              <span class="c-w">72.20<small>22:03</small></span>
+              <span class="c-df down">↓1.00</span>
             </div>
             <div class="wrow">
               <span class="c-date">周日<small>8月2日</small></span>
-              <span class="c-w">72.8<small>07:15</small></span>
-              <span class="c-w">73.0<small>21:47</small></span>
-              <span class="c-df down">↓0.9</span>
+              <span class="c-w">72.80<small>07:15</small></span>
+              <span class="c-w">73.00<small>21:47</small></span>
+              <span class="c-df down">↓0.90</span>
             </div>
             <div class="wrow">
               <span class="c-date">周六<small>8月1日</small></span>
-              <span class="c-w">73.7<small>07:02</small></span>
+              <span class="c-w">73.70<small>07:02</small></span>
               <span class="c-w none">—</span>
               <span class="c-df flat">首日</span>
             </div>
@@ -518,7 +524,7 @@
           <div><div class="ico"></div>设置</div>
         </div>
       </div>
-      <div class="label">⑥ 记录页（体重·每日双列对比）</div>
+      <div class="label">⑥ 记录页（总览卡新增"🏆 历史最低体重"；数字全部 2 位小数）</div>
     </div>
 
     <!-- 7 图表页-体重 -->
@@ -568,7 +574,7 @@
           <div class="m-card" style="display:flex;flex-direction:column;gap:10px">
             <div style="font-size:12px;color:var(--text-3)">身体数据（用于 BMI 和目标线）</div>
             <div class="m-meta"><span>📏 身高</span><span>175 cm ›</span></div>
-            <div class="m-meta"><span>🎯 目标体重</span><span>68.0 kg ›</span></div>
+            <div class="m-meta"><span>🎯 目标体重</span><span>68.00 kg ›</span></div>
             <div style="font-size:12px;color:var(--text-3)">默认单位</div>
             <div class="seg"><div class="on">kg</div><div>斤</div></div>
           </div>
@@ -599,15 +605,15 @@
           <div class="cal-week"><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div></div>
           <div class="cal-grid">
             <div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div>
-            <div class="cal-cell"><div class="d">1</div><div class="w">73.7</div><div class="cd">首日</div></div>
+            <div class="cal-cell"><div class="d">1</div><div class="w">73.70</div><div class="cd">首日</div></div>
             <div class="cal-cell"><div class="d">2</div><div class="w" style="color:var(--text-3)">—</div></div>
-            <div class="cal-cell"><div class="d">3</div><div class="w">72.8</div><div class="cd down">↓0.9</div></div>
+            <div class="cal-cell"><div class="d">3</div><div class="w">72.80</div><div class="cd down">↓0.90</div></div>
             <div class="cal-cell"><div class="d">4</div><div class="w" style="color:var(--text-3)">—</div></div>
-            <div class="cal-cell"><div class="d">5</div><div class="w">72.1</div><div class="cd down">↓0.7</div></div>
-            <div class="cal-cell"><div class="d">6</div><div class="w">71.5</div><div class="cd down">↓0.6</div></div>
+            <div class="cal-cell"><div class="d">5</div><div class="w">72.10</div><div class="cd down">↓0.70</div></div>
+            <div class="cal-cell"><div class="d">6</div><div class="w">71.50</div><div class="cd down">↓0.60</div></div>
             <div class="cal-cell"><div class="d">7</div><div class="w" style="color:var(--text-3)">—</div></div>
-            <div class="cal-cell"><span class="inj-dot">💉</span><div class="d">8</div><div class="w">70.9</div><div class="cd down">↓0.6</div></div>
-            <div class="cal-cell today"><div class="d">9</div><div class="w">70.5</div><div class="cd down">↓0.4</div></div>
+            <div class="cal-cell"><span class="inj-dot">💉</span><div class="d">8</div><div class="w">70.90</div><div class="cd down">↓0.60</div></div>
+            <div class="cal-cell today"><div class="d">9</div><div class="w">70.50</div><div class="cd down">↓0.40</div></div>
             <div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div>
           </div>
         </div>
@@ -632,14 +638,14 @@
           <div class="cal-head"><span>‹</span><b>2026年8月</b><span>›</span></div>
           <div class="cal-grid">
             <div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div>
-            <div class="cal-cell"><div class="d">1</div><div class="w">73.7</div></div>
+            <div class="cal-cell"><div class="d">1</div><div class="w">73.70</div></div>
             <div class="cal-cell"><div class="d">2</div></div>
-            <div class="cal-cell"><div class="d">3</div><div class="w">72.8</div></div>
+            <div class="cal-cell"><div class="d">3</div><div class="w">72.80</div></div>
             <div class="cal-cell"><div class="d">4</div></div>
-            <div class="cal-cell"><div class="d">5</div><div class="w">72.1</div></div>
-            <div class="cal-cell"><div class="d">6</div><div class="w">71.5</div></div>
+            <div class="cal-cell"><div class="d">5</div><div class="w">72.10</div></div>
+            <div class="cal-cell"><div class="d">6</div><div class="w">71.50</div></div>
             <div class="cal-cell"><div class="d">7</div></div>
-            <div class="cal-cell"><span class="inj-dot">💉</span><div class="d">8</div><div class="w">70.9</div></div>
+            <div class="cal-cell"><span class="inj-dot">💉</span><div class="d">8</div><div class="w">70.90</div></div>
           </div>
         </div>
         <div class="sheet-mask"></div>
@@ -647,13 +653,12 @@
           <h4>💉 8月8日 · 记录打针</h4>
           <div class="fld"><span>🕐 时间点</span><span>07:30 ›</span></div>
           <div class="chip-row"><span>2.5mg</span><span class="on">5mg</span><span>7.5mg</span><span>10mg</span></div>
-          <div class="fld"><span>💧 剂量</span><span>0.5 ml ›</span></div>
           <div class="fld"><span>📦 第几支</span><span>第 2 支 ›</span></div>
           <div class="fld"><span>🔢 第几针</span><span>第 3 针 ›</span></div>
           <div class="m-btn">保 存</div>
         </div>
       </div>
-      <div class="label">⑩ 日历点某天 → 底部弹出打针表单（可补录）</div>
+      <div class="label">⑩ 日历点某天 → 底部弹出打针表单（已去掉"剂量ml"字段）</div>
     </div>
 
     <!-- 11 打针视图 -->
@@ -665,10 +670,10 @@
           <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
           <div class="seg"><div>☰ 列表</div><div>📅 日历</div><div class="on">💉 打针</div></div>
           <div class="wtab">
-            <div class="wrow head"><span class="c-date">日期</span><span class="c-w">浓度</span><span class="c-w">剂量</span><span class="c-w">支·针</span><span class="c-df">🍚空腹</span></div>
-            <div class="wrow"><span class="c-date">8月8日<small>07:30</small></span><span class="c-w">5<small>mg</small></span><span class="c-w">0.5<small>ml</small></span><span class="c-w">2·3<small>支·针</small></span><span class="c-df flat">70.9</span></div>
-            <div class="wrow"><span class="c-date">8月1日<small>07:15</small></span><span class="c-w">5<small>mg</small></span><span class="c-w">0.5<small>ml</small></span><span class="c-w">2·2<small>支·针</small></span><span class="c-df flat">73.7</span></div>
-            <div class="wrow"><span class="c-date">7月25日<small>08:02</small></span><span class="c-w">2.5<small>mg</small></span><span class="c-w">0.25<small>ml</small></span><span class="c-w">2·1<small>支·针</small></span><span class="c-df flat">—</span></div>
+            <div class="wrow head"><span class="c-date">日期</span><span class="c-w">浓度</span><span class="c-w">支·针</span><span class="c-df">🍚空腹</span></div>
+            <div class="wrow"><span class="c-date">8月8日<small>07:30</small></span><span class="c-w">5<small>mg</small></span><span class="c-w">2·3<small>支·针</small></span><span class="c-df down">70.90<small>↓2.80</small></span></div>
+            <div class="wrow"><span class="c-date">8月1日<small>07:15</small></span><span class="c-w">5<small>mg</small></span><span class="c-w">2·2<small>支·针</small></span><span class="c-df up">73.70<small>↑3.40</small></span></div>
+            <div class="wrow"><span class="c-date">7月25日<small>08:02</small></span><span class="c-w">2.5<small>mg</small></span><span class="c-w">2·1<small>支·针</small></span><span class="c-df flat">70.30</span></div>
           </div>
         </div>
         <div class="m-tabbar">
@@ -678,7 +683,7 @@
           <div><div class="ico"></div>设置</div>
         </div>
       </div>
-      <div class="label">⑪ 打针视图（行式列表：每针一行 + 当天空腹体重，点行可删除）</div>
+      <div class="label">⑪ 打针视图（去掉剂量列；空腹体重带颜色：绿=较上一针轻、红=重，并标出差值）</div>
     </div>
   </div>
 
@@ -686,10 +691,12 @@
   <div class="note">Web 端沿用现有左右分栏：左侧录入卡片顶部同样有"血压 / 体重"切换，切到体重后表单变为体重版；右栏最近记录跟随切换。图表页和记录页同样加顶部切换，布局不变。体重日历在 Web 端加宽展示，交互不变。</div>
 
   <div class="feedback">
-    <b>请确认打针功能设计：</b>① 进入 app 默认显示体重模式（血压仍可顶部切换）OK？
-    ② 录入页加"💉 同时记录打针（选填）"展开行，日历点某天可补录——两个入口够吗？
-    ③ 列表行日期旁和日历格子右上角加 💉 小角标（不改变现有布局大小）OK？
-    ④ "💉 打针"视图：行式列表（表头：日期/浓度/剂量/支·针/🍚空腹），点行可删除。✅ 已确认并开发上线。
+    <b>本轮变更（V3），请确认：</b><br>
+    ① 体重全部保留 2 位小数（kg 和斤都一样）：70.50 kg / 141.00 斤<br>
+    ② 记录页总览卡新增一行：🏆 历史最低 70.50 kg（8月9日）<br>
+    ③ 打针去掉"剂量 ml"字段，只留：时间点 / 浓度 / 第几支 / 第几针（录入页⑤、弹层⑩、打针视图⑪ 都已去掉）<br>
+    ④ 打针视图的空腹体重带颜色和差值：<span style="color:#3fbb7a;font-weight:700">绿 ↓ = 较上一针轻了</span>、<span style="color:#f0564f;font-weight:700">红 ↑ = 重了</span>，只显示 ↓/↑ 和差值数字，对比对象是"上一针打针当天的空腹体重"；当天没记录空腹就显示"—"<br>
+    确认后我开始改代码。
   </div>
 
 </div>
