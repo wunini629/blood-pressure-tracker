@@ -200,6 +200,22 @@
   .wrow .c-df.up { color: var(--danger); }
   .wrow .c-df.flat { color: var(--text-3); font-weight: 400; }
 
+  /* 阶段目标（独立卡片，与总览卡上下分开） */
+  .stage-card { background: linear-gradient(135deg, #eaf3ff, #f3efff); border-radius: var(--radius); padding: 12px 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .stage-now { font-size: 12px; color: var(--text-2); }
+  .stage-big { font-size: 22px; font-weight: 800; color: var(--primary-deep); margin-top: 2px; }
+  .stage-big small { font-size: 11px; font-weight: 600; color: var(--text-2); }
+  .stage-bar { height: 8px; border-radius: 999px; background: #fff; margin-top: 8px; overflow: hidden; }
+  .stage-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), #6b54d3); }
+  .stage-done { font-size: 11px; color: var(--text-3); margin-top: 8px; }
+  .stage-row { display: flex; align-items: center; gap: 8px; font-size: 13px; background: var(--bg); border-radius: 999px; padding: 8px 8px 8px 14px; }
+  .stage-row .no { color: var(--text-2); white-space: nowrap; }
+  .stage-row .val { flex: 1; text-align: right; font-weight: 700; }
+  .stage-row .del { color: var(--danger); font-size: 12px; padding: 2px 8px; }
+  .unit-mini { display: flex; background: #e6edf7; border-radius: 999px; padding: 2px; }
+  .unit-mini span { font-size: 11px; padding: 4px 10px; border-radius: 999px; color: var(--text-2); }
+  .unit-mini span.on { background: #fff; color: var(--primary-deep); font-weight: 700; box-shadow: 0 1px 4px rgba(70,100,140,.15); }
+
   .feedback { background: #eaf3ff; border: 1px solid #bcd7ff; border-radius: 14px; padding: 14px 16px; font-size: 13px; color: #2d5386; margin-top: 40px; }
 </style>
 </head>
@@ -470,7 +486,16 @@
             <div class="stat-sub">🏆 历史最低 70.50 kg（8月9日）</div>
             <div class="stat-sub">BMI 22.9 · 标准 · 身高 175cm</div>
           </div>
-          <div class="seg"><div class="on">☰ 列表</div><div>📅 日历</div><div>💉 打针</div></div>
+          <div class="stage-card">
+            <div class="stage-now">🎯 第2阶段目标 70.00 kg</div>
+            <div class="stage-big">还差 0.50 kg <small>当前 70.50 kg</small></div>
+            <div class="stage-bar"><i style="width:93%"></i></div>
+            <div class="stage-done">✅ 第1阶段 77.00 kg · 已于 8月1日 达成</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div class="seg" style="flex:1"><div class="on">☰</div><div>📅</div><div>💉</div></div>
+            <div class="unit-mini"><span class="on">kg</span><span>斤</span></div>
+          </div>
           <div class="wtab">
             <div class="wrow head"><span class="c-date">日期</span><span class="c-w">🍚 空腹</span><span class="c-w">🌙 非空腹</span><span class="c-df">较前日</span></div>
             <div class="wrow">
@@ -524,7 +549,7 @@
           <div><div class="ico"></div>设置</div>
         </div>
       </div>
-      <div class="label">⑥ 记录页（总览卡新增"🏆 历史最低体重"；数字全部 2 位小数）</div>
+      <div class="label">⑥ 记录页（上下两张卡：基本信息卡 + 阶段目标卡；视图切换右侧 kg/斤 开关，默认 kg）</div>
     </div>
 
     <!-- 7 图表页-体重 -->
@@ -572,15 +597,18 @@
         <div class="m-body">
           <div class="m-title">设置</div>
           <div class="m-card" style="display:flex;flex-direction:column;gap:10px">
-            <div style="font-size:12px;color:var(--text-3)">身体数据（用于 BMI 和目标线）</div>
+            <div style="font-size:12px;color:var(--text-3)">身体数据（用于 BMI）</div>
             <div class="m-meta"><span>📏 身高</span><span>175 cm ›</span></div>
-            <div class="m-meta"><span>🎯 目标体重</span><span>68.00 kg ›</span></div>
+            <div style="font-size:12px;color:var(--text-3)">🎯 阶段目标体重（按顺序依次达成，单位 kg）</div>
+            <div class="stage-row"><span class="no">第1阶段</span><span class="val">77.00 kg</span><span class="del">✕</span></div>
+            <div class="stage-row"><span class="no">第2阶段</span><span class="val">70.00 kg</span><span class="del">✕</span></div>
+            <div class="stage-row" style="justify-content:center;color:var(--primary-deep);font-weight:600">＋ 添加阶段</div>
             <div style="font-size:12px;color:var(--text-3)">默认单位</div>
             <div class="seg"><div class="on">kg</div><div>斤</div></div>
           </div>
           <div class="m-card" style="font-size:12px;color:var(--text-2)">
             📷 拍照识别（AI 接口）与血压共用，已配置 ✓<br>
-            💾 导出 CSV 将同时包含血压和体重记录
+            💾 导出 CSV 将同时包含血压、体重和打针记录
           </div>
         </div>
         <div class="m-tabbar">
@@ -590,7 +618,7 @@
           <div class="on"><div class="ico"></div>设置</div>
         </div>
       </div>
-      <div class="label">⑧ 设置页（新增身体数据）</div>
+      <div class="label">⑧ 设置页（单个目标体重 → 阶段目标列表，可增删、阶段数不限）</div>
     </div>
 
     <!-- 9 日历视图 -->
@@ -600,7 +628,7 @@
         <div class="m-statusbar"></div>
         <div class="m-body">
           <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
-          <div class="seg"><div>☰ 列表</div><div class="on">📅 日历</div><div>💉 打针</div></div>
+          <div class="seg"><div>☰</div><div class="on">📅</div><div>💉</div></div>
           <div class="cal-head"><span>‹</span><b>2026年8月</b><span>›</span></div>
           <div class="cal-week"><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div></div>
           <div class="cal-grid">
@@ -634,7 +662,7 @@
         <div class="m-statusbar"></div>
         <div class="m-body">
           <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
-          <div class="seg"><div>☰ 列表</div><div class="on">📅 日历</div><div>💉 打针</div></div>
+          <div class="seg"><div>☰</div><div class="on">📅</div><div>💉</div></div>
           <div class="cal-head"><span>‹</span><b>2026年8月</b><span>›</span></div>
           <div class="cal-grid">
             <div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div>
@@ -668,7 +696,7 @@
         <div class="m-statusbar"></div>
         <div class="m-body">
           <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
-          <div class="seg"><div>☰ 列表</div><div>📅 日历</div><div class="on">💉 打针</div></div>
+          <div class="seg"><div>☰</div><div>📅</div><div class="on">💉</div></div>
           <div class="wtab">
             <div class="wrow head"><span class="c-date">日期</span><span class="c-w">浓度</span><span class="c-w">支·针</span><span class="c-df">🍚空腹</span></div>
             <div class="wrow"><span class="c-date">8月8日<small>07:30</small></span><span class="c-w">5<small>mg</small></span><span class="c-w">2·3<small>支·针</small></span><span class="c-df down">70.90<small>↓2.80</small></span></div>
@@ -691,11 +719,11 @@
   <div class="note">Web 端沿用现有左右分栏：左侧录入卡片顶部同样有"血压 / 体重"切换，切到体重后表单变为体重版；右栏最近记录跟随切换。图表页和记录页同样加顶部切换，布局不变。体重日历在 Web 端加宽展示，交互不变。</div>
 
   <div class="feedback">
-    <b>本轮变更（V3），请确认：</b><br>
-    ① 体重全部保留 2 位小数（kg 和斤都一样）：70.50 kg / 141.00 斤<br>
-    ② 记录页总览卡新增一行：🏆 历史最低 70.50 kg（8月9日）<br>
-    ③ 打针去掉"剂量 ml"字段，只留：时间点 / 浓度 / 第几支 / 第几针（录入页⑤、弹层⑩、打针视图⑪ 都已去掉）<br>
-    ④ 打针视图的空腹体重带颜色和差值：<span style="color:#3fbb7a;font-weight:700">绿 ↓ = 较上一针轻了</span>、<span style="color:#f0564f;font-weight:700">红 ↑ = 重了</span>，只显示 ↓/↑ 和差值数字，对比对象是"上一针打针当天的空腹体重"；当天没记录空腹就显示"—"<br>
+    <b>本轮变更（V4），请确认：</b><br>
+    ① 目标体重改成<b>阶段目标</b>（⑧ 设置页）：可自由添加/删除阶段，数量不限，按顺序依次达成；旧的单一目标会自动变成"第1阶段"<br>
+    ② 记录页（⑥）改成<b>上下两张卡片</b>：第一张只放累计/最初/历史最低/BMI 基本信息；第二张是阶段目标卡（渐变底色）——"🎯 第2阶段目标 70.00 kg / 还差 0.50 kg" + 进度条，已达成的阶段在卡片底部一行小字（✅ 第1阶段…）；全部达成时显示 🎉；没设目标时这张卡不显示<br>
+    ③ 记录页新增 <b>kg / 斤</b> 小开关（⑥ 视图切换右侧），只影响记录页展示（列表/日历/打针/总览卡），默认 kg；为避免换行，"列表/日历/打针"切换改成纯图标 ☰ 📅 💉<br>
+    ④ 图表页的目标虚线改为画"最近的未达标阶段"那条线<br>
     确认后我开始改代码。
   </div>
 
