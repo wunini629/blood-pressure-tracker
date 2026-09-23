@@ -154,6 +154,21 @@
   .wrow .c-df.down { color: var(--ok); }
   .wrow .c-df.up { color: var(--danger); }
   .wrow .c-df.flat { color: var(--text-3); font-weight: 400; }
+  /* 阶段目标卡 */
+  .stage-card { background: linear-gradient(135deg, #eaf3ff, #f3efff); border-radius: var(--radius); padding: 12px 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); margin-bottom: 10px; }
+  .stage-now { font-size: 12px; color: var(--text-2); }
+  .stage-big { font-size: 22px; font-weight: 800; color: var(--primary-deep); margin-top: 2px; }
+  .stage-big small { font-size: 11px; font-weight: 600; color: var(--text-2); }
+  .stage-bar { height: 8px; border-radius: 999px; background: #fff; margin-top: 8px; overflow: hidden; }
+  .stage-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--primary), #6b54d3); }
+  .stage-done { font-size: 11px; color: var(--text-3); margin-top: 8px; }
+  .stage-row { display: flex; align-items: center; gap: 8px; font-size: 13px; background: var(--bg); border-radius: 999px; padding: 6px 8px 6px 14px; }
+  .stage-row .no { color: var(--text-2); white-space: nowrap; }
+  .stage-row input { flex: 1; border: none; background: none; outline: none; font-size: 13px; text-align: right; font-weight: 700; color: var(--text); min-width: 0; }
+  .stage-row .del { color: var(--danger); font-size: 12px; padding: 2px 8px; }
+  .unit-mini { display: flex; background: #e6edf7; border-radius: 999px; padding: 2px; flex-shrink: 0; }
+  .unit-mini button { font-size: 11px; padding: 4px 10px; border-radius: 999px; color: var(--text-2); }
+  .unit-mini button.on { background: #fff; color: var(--primary-deep); font-weight: 700; box-shadow: 0 1px 4px rgba(70,100,140,.15); }
   /* 体重·日历 */
   .cal-head { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; padding: 2px 8px; margin-bottom: 4px; }
   .cal-head button { color: var(--primary-deep); font-size: 18px; padding: 0 10px; }
@@ -290,10 +305,17 @@
       <button data-kind="bp">🩺 血压</button>
     </div>
     <div class="stat-card" id="weightStatCard" style="display:none"></div>
-    <div class="seg" id="histViewSeg" style="display:none;margin-bottom:10px">
-      <button data-v="list" class="on">☰ 列表</button>
-      <button data-v="cal">📅 日历</button>
-      <button data-v="inj">💉 打针</button>
+    <div class="stage-card" id="stageCard" style="display:none"></div>
+    <div id="histViewRow" style="display:none;gap:8px;align-items:center;margin-bottom:10px">
+      <div class="seg" id="histViewSeg" style="flex:1">
+        <button data-v="list" class="on">☰</button>
+        <button data-v="cal">📅</button>
+        <button data-v="inj">💉</button>
+      </div>
+      <div class="unit-mini" id="histUnitSeg">
+        <button data-u="kg" class="on">kg</button>
+        <button data-u="jin">斤</button>
+      </div>
     </div>
     <div class="seg" id="histSeg">
       <button data-f="all" class="on">全部</button>
@@ -363,7 +385,11 @@
       <h3>身体数据（用于 BMI 和目标线）</h3>
       <div class="card">
         <div class="set-row"><label>身高（cm）</label><input id="setHeight" type="number" placeholder="如 175"></div>
-        <div class="set-row"><label>目标体重（kg）</label><input id="setTarget" type="number" step="0.1" placeholder="如 68"></div>
+        <div class="set-row" style="flex-direction:column;align-items:stretch;gap:8px">
+          <label>🎯 阶段目标体重（kg，按顺序依次达成）</label>
+          <div id="stageList" style="display:flex;flex-direction:column;gap:8px"></div>
+          <button class="btn plain" id="stageAddBtn" type="button">＋ 添加阶段</button>
+        </div>
         <div class="set-row"><label>体重默认单位</label>
           <div class="seg" id="unitSeg">
             <button data-u="kg" class="on">kg</button>
@@ -655,6 +681,10 @@ function resetAddForm() {
   $('#wHint').style.display = 'none';
   $('#inNote').value = '';
   $('#inTime').value = toLocalInputValue(Date.now());
+  // 按时间段默认空腹状态：0:00–14:00 空腹，14:01 起非空腹
+  const now = new Date();
+  curFast = (now.getHours() * 60 + now.getMinutes()) <= 840 ? 'fasting' : 'full';
+  $$('#fastSeg button').forEach(b => b.classList.toggle('on', b.dataset.fast === curFast));
   $('#injForm').style.display = 'none';
   $('#injArrow').textContent = '展开 ›';
   $('#injTime').value = '';
@@ -738,6 +768,7 @@ function recItemHTML(r, wAsc) {
 let histFilter = 'all';
 let histKind = 'weight';
 let histView = 'list';      // 体重模式：list | cal | inj
+let histUnit = 'kg';        // 记录页展示单位（默认 kg，可切换斤）
 let calCursor = null;       // {y, m} 日历当前月份
 
 function renderHistory() {
@@ -745,13 +776,15 @@ function renderHistory() {
   $('#histSeg').style.display = isW ? 'none' : '';
   $('#histSegW').style.display = 'none';
   $('#weightStatCard').style.display = isW ? '' : 'none';
-  $('#histViewSeg').style.display = isW ? '' : 'none';
+  $('#histViewRow').style.display = isW ? 'flex' : 'none';
+  $('#stageCard').style.display = 'none';
   $('#histList').style.display = isW ? 'none' : '';
   $('#wListWrap').style.display = isW && histView === 'list' ? '' : 'none';
   $('#wCalWrap').style.display = isW && histView === 'cal' ? '' : 'none';
   $('#wInjWrap').style.display = isW && histView === 'inj' ? '' : 'none';
   if (isW) {
     renderWeightStat();
+    renderStageCard();
     if (histView === 'list') renderWeightRows();
     else if (histView === 'cal') renderWeightCal();
     else renderInjRows();
@@ -769,7 +802,7 @@ function renderHistory() {
 /* ---------- 体重：统计卡 ---------- */
 function renderWeightStat() {
   const el = $('#weightStatCard');
-  const unit = getSettings().unit || 'kg';
+  const unit = histUnit;
   const asc = getRecords().filter(r => kindOf(r) === 'weight').sort((a, b) => a.ts - b.ts);
   if (!asc.length) { el.innerHTML = '<div class="stat-sub">还没有体重记录，去录入一条吧</div>'; return; }
   const first = asc[0], latest = asc[asc.length - 1];
@@ -791,6 +824,34 @@ function renderWeightStat() {
     ? `BMI ${bmi} · ${bmiLabel(bmi)} · 身高 ${getSettings().height}cm`
     : '在设置页填写身高后可显示 BMI';
   el.innerHTML = `<div class="stat-main">${main}</div><div class="stat-sub">${sub}</div><div class="stat-sub">${minLine}</div><div class="stat-sub">${bmiLine}</div>`;
+}
+
+/* ---------- 体重：阶段目标卡 ---------- */
+function renderStageCard() {
+  const el = $('#stageCard');
+  const s = stageState();
+  if (!s) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  const unit = histUnit;
+  const u = unit === 'jin' ? '斤' : 'kg';
+  const w = (kg) => kgToDisp(kg, unit).toFixed(2);
+  if (s.allDone) {
+    el.innerHTML = `<div class="stage-big">🎉 全部阶段目标已达成！</div>` +
+      s.stages.map((t, i) => `<div class="stage-done">✅ 第${i + 1}阶段 ${w(t)} ${u}</div>`).join('');
+    return;
+  }
+  const t = s.stages[s.idx];
+  const diff = kgToDisp(s.cur - t, unit);
+  const doneLines = s.stages.slice(0, s.idx).map((tg, i) => {
+    const ts = s.doneTs(tg);
+    const d = ts ? new Date(ts) : null;
+    return `<div class="stage-done">✅ 第${i + 1}阶段 ${w(tg)} ${u}${d ? ` · 已于 ${d.getMonth() + 1}月${d.getDate()}日 达成` : ''}</div>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="stage-now">🎯 第${s.idx + 1}阶段目标 ${w(t)} ${u}</div>
+    <div class="stage-big">还差 ${diff.toFixed(2)} ${u} <small>当前 ${w(s.cur)} ${u}</small></div>
+    <div class="stage-bar"><i style="width:${Math.round(s.pct)}%"></i></div>
+    ${doneLines}`;
 }
 
 /* ---------- 体重：行式列表 ---------- */
@@ -820,7 +881,7 @@ function weightDays() {
   return Array.from(map.values()).sort((a, b) => a.key - b.key);
 }
 function renderWeightRows() {
-  const unit = getSettings().unit || 'kg';
+  const unit = histUnit;
   const days = weightDays();
   const wrap = $('#wListWrap');
   if (!days.length) { wrap.innerHTML = '<div class="empty">还没有体重记录，去录入一条吧</div>'; return; }
@@ -849,7 +910,7 @@ function renderWeightRows() {
 
 /* ---------- 体重：日历 ---------- */
 function renderWeightCal() {
-  const unit = getSettings().unit || 'kg';
+  const unit = histUnit;
   const wrap = $('#wCalWrap');
   if (!calCursor) { const n = new Date(); calCursor = { y: n.getFullYear(), m: n.getMonth() }; }
   const { y, m } = calCursor;
@@ -918,7 +979,7 @@ function collectInj(dateTs, timeId, penId, shotId, concSeg) {
 /* 打针视图：行式列表，每针一行 + 当天空腹体重（较上一针涨跌） */
 function renderInjRows() {
   const wrap = $('#wInjWrap');
-  const unit = getSettings().unit || 'kg';
+  const unit = histUnit;
   const list = getInj().sort((a, b) => b.ts - a.ts);
   if (!list.length) {
     wrap.innerHTML = '<div class="empty">还没有打针记录，可在录入体重时展开"同时记录打针"，或在日历页点日期补录</div>';
@@ -1065,7 +1126,7 @@ function drawChart() {
 
   // 数值范围
   let vMin, vMax;
-  const target = +getSettings().target || null;
+  const target = currentStageTargetKg();
   if (isW) {
     vMin = Math.min(...data.map(r => r.kg));
     vMax = Math.max(...data.map(r => r.kg));
@@ -1149,10 +1210,40 @@ const DEFAULT_SETTINGS = {
   model: 'kimi-k2.6',
   apiKey: '',
   height: '',   // cm，用于 BMI
-  target: '',   // 目标体重 kg
+  target: '',   // 旧版单一目标体重 kg（兼容用，展示时迁移为 stages[0]）
+  stages: [],   // 阶段目标体重 [kg, ...]，按顺序依次达成
   unit: 'kg'    // 体重默认单位 kg / jin
 };
 function getSettings() { return Object.assign({}, DEFAULT_SETTINGS, LS.get(K_SETTINGS, {})); }
+
+/* 阶段目标（kg 数值数组，按顺序依次达成；兼容旧的单一 target） */
+function getStages() {
+  const st = getSettings();
+  const arr = Array.isArray(st.stages) ? st.stages.map(Number).filter(x => x > 0) : [];
+  if (arr.length) return arr;
+  return +st.target > 0 ? [+st.target] : [];
+}
+/* 当前阶段信息：最新体重 vs 阶段列表 */
+function stageState() {
+  const stages = getStages();
+  if (!stages.length) return null;
+  const cur = lastWeightKg();
+  if (cur === null) return null;
+  const asc = getRecords().filter(r => kindOf(r) === 'weight').sort((a, b) => a.ts - b.ts);
+  const firstKg = asc.length ? asc[0].kg : cur;
+  const idx = stages.findIndex(t => cur > t); // 第一个未达成的阶段
+  const doneTs = (t) => { const r = asc.find(x => x.kg <= t); return r ? r.ts : null; };
+  if (idx === -1) return { allDone: true, stages, doneTs };
+  const fromKg = idx > 0 ? stages[idx - 1] : firstKg; // 进度条起点：上一阶段或首次记录
+  const span = fromKg - stages[idx];
+  const pct = span > 0 ? Math.min(100, Math.max(0, (fromKg - cur) / span * 100)) : 100;
+  return { allDone: false, idx, cur, stages, pct, doneTs };
+}
+/* 图表目标线：最近的未达标阶段 */
+function currentStageTargetKg() {
+  const s = stageState();
+  return s && !s.allDone ? s.stages[s.idx] : null;
+}
 
 function compressImage(file) {
   return new Promise((resolve, reject) => {
@@ -1244,8 +1335,19 @@ function loadSettings() {
   $('#setModel').value = st.model;
   $('#setApiKey').value = st.apiKey;
   $('#setHeight').value = st.height;
-  $('#setTarget').value = st.target;
+  stageDraft = getStages();
+  renderStageEditor();
   $$('#unitSeg button').forEach(b => b.classList.toggle('on', b.dataset.u === (st.unit || 'kg')));
+}
+/* 阶段目标编辑器 */
+let stageDraft = [];
+function readStageInputs() {
+  stageDraft = $$('#stageList input').map(i => parseFloat(i.value) || '');
+}
+function renderStageEditor() {
+  $('#stageList').innerHTML = stageDraft.map((v, i) =>
+    `<div class="stage-row"><span class="no">第${i + 1}阶段</span><input type="number" step="0.01" min="1" value="${v === '' ? '' : v}" placeholder="目标 kg"><button class="del" data-i="${i}" type="button">✕</button></div>`
+  ).join('') || '<div style="font-size:12px;color:var(--text-3)">还没有阶段目标，点下方"添加阶段"</div>';
 }
 function saveSettings() {
   const cur = getSettings();
@@ -1258,11 +1360,15 @@ function saveSettings() {
 }
 function saveBody() {
   const cur = getSettings();
+  const stages = $$('#stageList input').map(i => parseFloat(i.value)).filter(v => v > 0);
   LS.set(K_SETTINGS, Object.assign(cur, {
     height: $('#setHeight').value.trim(),
-    target: $('#setTarget').value.trim(),
+    stages,
+    target: '', // 旧的单一目标已迁移为阶段
     unit: $$('#unitSeg button').find(b => b.classList.contains('on'))?.dataset.u || 'kg'
   }));
+  stageDraft = stages;
+  renderStageEditor();
   if (curKind === 'weight') setUnit(getSettings().unit || 'kg', true);
   toast('身体数据已保存 ✓');
 }
@@ -1450,6 +1556,25 @@ function bindEvents() {
     histView = b.dataset.v;
     $$('#histViewSeg button').forEach(x => x.classList.toggle('on', x === b));
     renderHistory();
+  });
+  // 记录页单位切换（只影响记录页展示）
+  $('#histUnitSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    histUnit = b.dataset.u;
+    $$('#histUnitSeg button').forEach(x => x.classList.toggle('on', x === b));
+    renderHistory();
+  });
+  // 阶段目标编辑器：添加 / 删除
+  $('#stageAddBtn').addEventListener('click', () => {
+    readStageInputs();
+    stageDraft.push('');
+    renderStageEditor();
+  });
+  $('#stageList').addEventListener('click', e => {
+    const b = e.target.closest('.del'); if (!b) return;
+    readStageInputs();
+    stageDraft.splice(+b.dataset.i, 1);
+    renderStageEditor();
   });
   // 体重行式列表：点击某个体重数字可删除该条记录
   $('#wListWrap').addEventListener('click', e => {
