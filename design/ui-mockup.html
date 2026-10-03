@@ -212,6 +212,17 @@
   .stage-row .no { color: var(--text-2); white-space: nowrap; }
   .stage-row .val { flex: 1; text-align: right; font-weight: 700; }
   .stage-row .del { color: var(--danger); font-size: 12px; padding: 2px 8px; }
+  /* 日常记录 */
+  .meal-row { display: flex; align-items: center; gap: 8px; font-size: 13px; background: var(--bg); border-radius: 999px; padding: 9px 14px; }
+  .meal-row .v { flex: 1; text-align: right; color: var(--text-3); font-size: 12px; }
+  .water-step { display: flex; align-items: center; justify-content: center; gap: 16px; background: #fff; border-radius: var(--radius); padding: 8px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .water-step button { width: 30px; height: 30px; border-radius: 50%; background: var(--primary-light); color: var(--primary-deep); font-size: 16px; font-weight: 700; }
+  .water-step b { font-size: 16px; }
+  .water-step b small { font-size: 10px; color: var(--text-3); font-weight: 400; }
+  .day-card { background: #fff; border-radius: var(--radius); padding: 10px 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .day-card .dh { font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; }
+  .day-card .dl { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+  .day-card .dl.dim { color: var(--text-3); }
   .unit-mini { display: flex; background: #e6edf7; border-radius: 999px; padding: 2px; }
   .unit-mini span { font-size: 11px; padding: 4px 10px; border-radius: 999px; color: var(--text-2); }
   .unit-mini span.on { background: #fff; color: var(--primary-deep); font-weight: 700; box-shadow: 0 1px 4px rgba(70,100,140,.15); }
@@ -629,7 +640,7 @@
         <div class="m-body">
           <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
           <div class="seg"><div>☰</div><div class="on">📅</div><div>💉</div></div>
-          <div class="cal-head"><span>‹</span><b>2026年8月</b><span>›</span></div>
+          <div class="cal-head"><span>‹</span><b>2026年8月 <span style="font-size:11px;font-weight:700;color:var(--ok)">↓3.20 kg</span></b><span>›</span></div>
           <div class="cal-week"><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div></div>
           <div class="cal-grid">
             <div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div>
@@ -663,7 +674,7 @@
         <div class="m-body">
           <div class="type-seg"><div>🩺 血压</div><div class="on">⚖️ 体重</div></div>
           <div class="seg"><div>☰</div><div class="on">📅</div><div>💉</div></div>
-          <div class="cal-head"><span>‹</span><b>2026年8月</b><span>›</span></div>
+          <div class="cal-head"><span>‹</span><b>2026年8月 <span style="font-size:11px;font-weight:700;color:var(--ok)">↓3.20 kg</span></b><span>›</span></div>
           <div class="cal-grid">
             <div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div><div class="cal-cell blank"></div>
             <div class="cal-cell"><div class="d">1</div><div class="w">73.70</div></div>
@@ -713,17 +724,82 @@
       </div>
       <div class="label">⑪ 打针视图（去掉剂量列；空腹体重带颜色：绿=较上一针轻、红=重，并标出差值）</div>
     </div>
+    <!-- 12 录入页-日常 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="type-seg"><div>⚖️ 体重</div><div>🩺 血压</div><div class="on">🍽️ 日常</div></div>
+          <div class="m-meta"><span>📅 日期</span><span>今天 8月9日 ›</span></div>
+          <div class="meal-row"><span>🌅 早餐</span><span class="v">鸡蛋 + 全麦面包</span></div>
+          <div class="meal-row"><span>☀️ 午餐</span><span class="v">鸡胸肉沙拉</span></div>
+          <div class="meal-row"><span>🌙 晚餐</span><span class="v">半碗米饭 + 青菜</span></div>
+          <div class="meal-row"><span>🍪 加餐/零食</span><span class="v">点我填写 ›</span></div>
+          <div class="chip-row"><span class="on">💩 大便</span><span>🩸 月经</span></div>
+          <div class="water-step"><span style="font-size:16px">🥛</span><button>−</button><b>1500 <small>ml</small></b><button>＋</button></div>
+          <div class="water-step"><span style="font-size:16px">😴</span><button>−</button><b>7.5 <small>小时</small></b><button>＋</button></div>
+          <div class="meal-row"><span>🏃 运动</span><span class="v">快走 30 分钟</span></div>
+          <div class="meal-row"><span>🥤 喝了什么</span><span class="v">美式咖啡</span></div>
+          <div class="m-btn">保 存</div>
+        </div>
+        <div class="m-tabbar">
+          <div class="on"><div class="ico"></div>录入</div>
+          <div><div class="ico"></div>记录</div>
+          <div><div class="ico"></div>图表</div>
+          <div><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">⑫ 录入页-日常（三餐/加餐文字简记；大便/月经开关；🥛喝水 ±250ml、😴睡眠 ±0.5h 步进；🏃运动一行文字）</div>
+    </div>
+
+    <!-- 13 记录页-日常 -->
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="m-statusbar"></div>
+        <div class="m-body">
+          <div class="type-seg"><div>⚖️ 体重</div><div>🩺 血压</div><div class="on">🍽️ 日常</div></div>
+          <div class="cal-head"><span>‹</span><b>2026年8月</b><span>›</span></div>
+          <div class="day-card">
+            <div class="dh">今天 8月9日 <span>⚖️ 70.50</span></div>
+            <div class="dl">🌅 鸡蛋 + 全麦面包</div>
+            <div class="dl">☀️ 鸡胸肉沙拉</div>
+            <div class="dl">🌙 半碗米饭 + 青菜</div>
+            <div class="dl dim">🥛 1500ml · 🥤 美式 · 😴 7.5h · 🏃 快走30分钟 · 💩</div>
+          </div>
+          <div class="day-card">
+            <div class="dh">昨天 8月8日 <span>⚖️ 70.90</span></div>
+            <div class="dl">🌅 燕麦牛奶</div>
+            <div class="dl">☀️ 麻辣烫（微辣）</div>
+            <div class="dl">🌙 玉米 + 鸡蛋</div>
+            <div class="dl dim">🍪 下午吃了饼干 · 🥛 2000ml · 💩 🩸</div>
+          </div>
+          <div class="day-card">
+            <div class="dh">8月7日</div>
+            <div class="dl dim">只记了 🥛 1200ml</div>
+          </div>
+        </div>
+        <div class="m-tabbar">
+          <div><div class="ico"></div>录入</div>
+          <div class="on"><div class="ico"></div>记录</div>
+          <div><div class="ico"></div>图表</div>
+          <div><div class="ico"></div>设置</div>
+        </div>
+      </div>
+      <div class="label">⑬ 记录页-日常（按月筛选 ‹ ›；日期右侧显示当日体重；点卡片可补录/修改；空字段不占行）</div>
+    </div>
   </div>
 
   <h2>Web 端适配说明</h2>
   <div class="note">Web 端沿用现有左右分栏：左侧录入卡片顶部同样有"血压 / 体重"切换，切到体重后表单变为体重版；右栏最近记录跟随切换。图表页和记录页同样加顶部切换，布局不变。体重日历在 Web 端加宽展示，交互不变。</div>
 
   <div class="feedback">
-    <b>本轮变更（V4），请确认：</b><br>
-    ① 目标体重改成<b>阶段目标</b>（⑧ 设置页）：可自由添加/删除阶段，数量不限，按顺序依次达成；旧的单一目标会自动变成"第1阶段"<br>
-    ② 记录页（⑥）改成<b>上下两张卡片</b>：第一张只放累计/最初/历史最低/BMI 基本信息；第二张是阶段目标卡（渐变底色）——"🎯 第2阶段目标 70.00 kg / 还差 0.50 kg" + 进度条，已达成的阶段在卡片底部一行小字（✅ 第1阶段…）；全部达成时显示 🎉；没设目标时这张卡不显示<br>
-    ③ 记录页新增 <b>kg / 斤</b> 小开关（⑥ 视图切换右侧），只影响记录页展示（列表/日历/打针/总览卡），默认 kg；为避免换行，"列表/日历/打针"切换改成纯图标 ☰ 📅 💉<br>
-    ④ 图表页的目标虚线改为画"最近的未达标阶段"那条线<br>
+    <b>本轮变更（V5），请确认：</b><br>
+    ① 日历月份表头加当月总计（⑨⑩）：`2026年8月 ↓3.20 kg`，口径 = 当月最后一次空腹 − 上月最后一次空腹（绿↓/红↑）<br>
+    ② 新增"🍽️ 日常"记录（⑫⑬）：录入页和记录页的顶部切换从两项变三项（⚖️ 体重 / 🩺 血压 / 🍽️ 日常）<br>
+    ③ 日常记录内容：早/午/晚餐 + 加餐（文字简记）、💩 大便开关、🩸 月经开关、🥛 喝水量（−/＋ 步进，每次 250ml）、😴 睡眠时长（步进 ±0.5h）、🏃 运动（一行文字）、🥤 喝了什么；每天一条，可补录修改<br>
+    ④ 日常历史卡（⑬）：日期右侧显示当日体重 ⚖️；顶部加月份筛选 `‹ 2026年8月 ›`；喝水图标统一用 🥛（水杯）<br>
     确认后我开始改代码。
   </div>
 
