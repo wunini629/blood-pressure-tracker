@@ -169,6 +169,17 @@
   .unit-mini { display: flex; background: #e6edf7; border-radius: 999px; padding: 2px; flex-shrink: 0; }
   .unit-mini button { font-size: 11px; padding: 4px 10px; border-radius: 999px; color: var(--text-2); }
   .unit-mini button.on { background: #fff; color: var(--primary-deep); font-weight: 700; box-shadow: 0 1px 4px rgba(70,100,140,.15); }
+  /* 日常记录 */
+  .stepper { display: flex; align-items: center; gap: 10px; }
+  .stepper button { width: 26px; height: 26px; border-radius: 50%; background: var(--primary-light); color: var(--primary-deep); font-size: 15px; font-weight: 700; line-height: 1; }
+  .stepper b { font-size: 14px; min-width: 64px; text-align: center; }
+  .stepper b small { font-size: 10px; color: var(--text-3); font-weight: 400; }
+  .day-card { background: #fff; border-radius: var(--radius); padding: 10px 14px; box-shadow: 0 3px 12px rgba(70,100,140,.07); margin-bottom: 10px; cursor: pointer; }
+  .day-card .dh { font-size: 13px; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+  .day-card .dh .r { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--primary-deep); font-size: 12px; }
+  .day-card .dh .del { color: var(--danger); font-size: 12px; padding: 2px 6px; }
+  .day-card .dl { font-size: 12px; color: var(--text-2); margin-top: 4px; }
+  .day-card .dl.dim { color: var(--text-3); }
   /* 体重·日历 */
   .cal-head { display: flex; justify-content: space-between; align-items: center; font-size: 15px; font-weight: 700; padding: 2px 8px; margin-bottom: 4px; }
   .cal-head button { color: var(--primary-deep); font-size: 18px; padding: 0 10px; }
@@ -242,6 +253,7 @@
         <div class="seg" id="kindSeg">
           <button data-kind="weight" class="on">⚖️ 体重</button>
           <button data-kind="bp">🩺 血压</button>
+          <button data-kind="daily">🍽️ 日常</button>
         </div>
         <div id="bpForm" style="display:none">
           <div class="seg" id="medSeg">
@@ -278,7 +290,26 @@
             <div class="meta-row"><span>🔢 第几针</span><input type="number" id="injShot" min="1" placeholder="如 1"></div>
           </div>
         </div>
-        <div class="meta-row">
+        <div id="dailyForm" style="display:none;flex-direction:column;gap:10px">
+          <div class="meta-row"><span>📅 日期</span><input type="date" id="dDate"></div>
+          <div class="meta-row"><span>🌅 早餐</span><input type="text" id="dBreakfast" placeholder="吃了什么"></div>
+          <div class="meta-row"><span>☀️ 午餐</span><input type="text" id="dLunch" placeholder="吃了什么"></div>
+          <div class="meta-row"><span>🌙 晚餐</span><input type="text" id="dDinner" placeholder="吃了什么"></div>
+          <div class="meta-row"><span>🍪 加餐/零食</span><input type="text" id="dSnack" placeholder="选填"></div>
+          <div class="seg" id="dFlagSeg">
+            <button data-f="poop">💩 大便</button>
+            <button data-f="period">🩸 月经</button>
+          </div>
+          <div class="meta-row"><span>🥛 喝水</span>
+            <span class="stepper"><button type="button" id="dWaterMinus">−</button><b id="dWaterVal">0<small> ml</small></b><button type="button" id="dWaterPlus">＋</button></span>
+          </div>
+          <div class="meta-row"><span>😴 睡眠</span>
+            <span class="stepper"><button type="button" id="dSleepMinus">−</button><b id="dSleepVal">0<small> 小时</small></b><button type="button" id="dSleepPlus">＋</button></span>
+          </div>
+          <div class="meta-row"><span>🏃 运动</span><input type="text" id="dSport" placeholder="选填，如 快走30分钟"></div>
+          <div class="meta-row"><span>🥤 喝了什么</span><input type="text" id="dDrinks" placeholder="选填，如 美式咖啡"></div>
+        </div>
+        <div class="meta-row" id="timeRow">
           <span>🕐 测量时间</span>
           <input type="datetime-local" id="inTime">
         </div>
@@ -303,6 +334,7 @@
     <div class="seg" id="histKindSeg" style="margin-bottom:10px">
       <button data-kind="weight" class="on">⚖️ 体重</button>
       <button data-kind="bp">🩺 血压</button>
+      <button data-kind="daily">🍽️ 日常</button>
     </div>
     <div class="stat-card" id="weightStatCard" style="display:none"></div>
     <div class="stage-card" id="stageCard" style="display:none"></div>
@@ -331,6 +363,7 @@
     <div id="wListWrap" style="display:none"></div>
     <div id="wCalWrap" style="display:none"></div>
     <div id="wInjWrap" style="display:none"></div>
+    <div id="dListWrap" style="display:none"></div>
   </section>
 
   <!-- 图表页 -->
@@ -498,6 +531,7 @@ const K_ACCOUNT = 'bpx_account';   // {u, h, salt}
 const K_REMEMBER = 'bpx_remember'; // {u, p} 记住密码
 const K_RECORDS = 'bpx_records';   // [{id, owner, sys, dia, hr, ts, med, note}]
 const K_INJ = 'bpx_injections';    // [{id, owner, ts, conc, pen, shot}] 打针记录
+const K_DAILY = 'bpx_daily';       // [{id, owner, day, breakfast, lunch, dinner, snack, poop, period, waterMl, sleepH, sport, drinks}] 日常记录，一天一条
 const K_SETTINGS = 'bpx_settings'; // {apiBase, model, apiKey}
 const S_SESSION = 'bpx_session';   // sessionStorage: 已登录用户名
 
@@ -512,6 +546,19 @@ function setInj(list) { LS.set(K_INJ, list); }
 function addInj(r) { const l = getInj(); l.push(r); setInj(l); }
 function delInj(id) { setInj(getInj().filter(r => r.id !== id)); }
 function injByDayKey(k) { return getInj().filter(r => dayKey(r.ts) === k).sort((a, b) => b.ts - a.ts); }
+
+/* 日常记录：一天一条（按 day 覆盖更新） */
+function getDaily() { return LS.get(K_DAILY, []); }
+function setDaily(list) { LS.set(K_DAILY, list); }
+function dailyByDay(k) { return getDaily().find(r => r.day === k) || null; }
+function upsertDaily(rec) {
+  const l = getDaily();
+  const i = l.findIndex(r => r.day === rec.day);
+  if (i >= 0) l[i] = rec;
+  else l.push(rec);
+  setDaily(l);
+}
+function delDaily(id) { setDaily(getDaily().filter(r => r.id !== id)); }
 
 /* 简单散列（crypto.subtle 不可用时兜底） */
 async function hashPass(salt, pass) {
@@ -607,7 +654,7 @@ function goPage(key) {
   curPage = key;
   $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + key));
   $$('#tabbar button, #sidebar button').forEach(b => b.classList.toggle('on', b.dataset.page === key));
-  $('#camBtn').style.display = key === 'add' ? '' : 'none';
+  $('#camBtn').style.display = key === 'add' && curKind !== 'daily' ? '' : 'none';
   if (key === 'history') renderHistory();
   if (key === 'chart') drawChart();
 }
@@ -637,12 +684,18 @@ let curUnit = 'kg';      // 当前体重输入单位（kg / jin）
 
 function applyKind() {
   const isW = curKind === 'weight';
-  $('#addTitle').textContent = isW ? '记录体重' : '记录血压';
-  $('#bpForm').style.display = isW ? 'none' : 'contents';
+  const isD = curKind === 'daily';
+  $('#addTitle').textContent = isW ? '记录体重' : isD ? '记录日常' : '记录血压';
+  $('#bpForm').style.display = isW || isD ? 'none' : 'contents';
   $('#weightForm').style.display = isW ? 'block' : 'none';
+  $('#dailyForm').style.display = isD ? 'flex' : 'none';
+  $('#timeRow').style.display = isD ? 'none' : '';
+  $('#inNote').style.display = isD ? 'none' : '';
+  $('#camBtn').style.display = isD ? 'none' : '';
   $('#camCap').textContent = isW ? '拍体重秤' : '拍血压计';
   $$('#kindSeg button').forEach(b => b.classList.toggle('on', b.dataset.kind === curKind));
   if (isW) { setUnit(getSettings().unit || 'kg', true); updateWeightHint(); }
+  if (isD) prefillDailyForm(dayKey(Date.now()));
 }
 
 function setUnit(u, keepValue) {
@@ -690,6 +743,7 @@ function resetAddForm() {
   $('#injTime').value = '';
   $('#injPen').value = '';
   $('#injShot').value = '';
+  if (curKind === 'daily') prefillDailyForm(dayKey(Date.now()));
   markBadInputs();
 }
 function markBadInputs() {
@@ -716,6 +770,30 @@ function saveRecord() {
     }
     addRecord(Object.assign(base, { kind: 'weight', kg: Math.round(dispToKg(v, curUnit) * 100) / 100, fast: curFast }));
     if (inj) addInj(inj);
+  } else if (curKind === 'daily') {
+    const dayVal = $('#dDate').value;
+    if (!dayVal) { toast('请选择日期'); return; }
+    const [y, m, dd] = dayVal.split('-').map(Number);
+    const rec = {
+      id: dailyByDay(y * 10000 + m * 100 + dd)?.id || base.id,
+      owner: currentUser(),
+      day: y * 10000 + m * 100 + dd,
+      breakfast: $('#dBreakfast').value.trim(),
+      lunch: $('#dLunch').value.trim(),
+      dinner: $('#dDinner').value.trim(),
+      snack: $('#dSnack').value.trim(),
+      poop: dFlags.poop,
+      period: dFlags.period,
+      waterMl: dWater,
+      sleepH: dSleep,
+      sport: $('#dSport').value.trim(),
+      drinks: $('#dDrinks').value.trim()
+    };
+    if (!rec.breakfast && !rec.lunch && !rec.dinner && !rec.snack && !rec.sport && !rec.drinks
+        && !rec.poop && !rec.period && !rec.waterMl && !rec.sleepH) {
+      toast('至少填写一项'); return;
+    }
+    upsertDaily(rec);
   } else {
     const sys = +$('#inSys').value, dia = +$('#inDia').value, hr = +$('#inHr').value;
     if (!sys || !dia) { toast('请填写收缩压和舒张压'); return; }
@@ -773,15 +851,18 @@ let calCursor = null;       // {y, m} 日历当前月份
 
 function renderHistory() {
   const isW = histKind === 'weight';
-  $('#histSeg').style.display = isW ? 'none' : '';
+  const isD = histKind === 'daily';
+  $('#histSeg').style.display = isW || isD ? 'none' : '';
   $('#histSegW').style.display = 'none';
   $('#weightStatCard').style.display = isW ? '' : 'none';
   $('#histViewRow').style.display = isW ? 'flex' : 'none';
   $('#stageCard').style.display = 'none';
-  $('#histList').style.display = isW ? 'none' : '';
+  $('#histList').style.display = isW || isD ? 'none' : '';
   $('#wListWrap').style.display = isW && histView === 'list' ? '' : 'none';
   $('#wCalWrap').style.display = isW && histView === 'cal' ? '' : 'none';
   $('#wInjWrap').style.display = isW && histView === 'inj' ? '' : 'none';
+  $('#dListWrap').style.display = isD ? '' : 'none';
+  if (isD) { renderDailyList(); return; }
   if (isW) {
     renderWeightStat();
     renderStageCard();
@@ -943,8 +1024,19 @@ function renderWeightCal() {
         : '<div class="w" style="color:var(--text-3)">—</div>') +
       '</div>';
   }
+  // 当月总计：当月最后一次空腹 − 此前最后一次空腹
+  const mStart = y * 10000 + (m + 1) * 100 + 1;
+  const inMonth = days.filter(g => g.key >= mStart && g.key <= mStart + 30);
+  const before = days.filter(g => g.key < mStart).pop();
+  let monthTotal = '';
+  if (inMonth.length && before) {
+    const diff = kgToDisp(inMonth[inMonth.length - 1].fasting.kg - before.fasting.kg, unit);
+    monthTotal = Math.abs(diff) < 0.005
+      ? ' <span style="font-size:11px;color:var(--text-3)">持平</span>'
+      : ` <span style="font-size:11px;color:${diff < 0 ? 'var(--ok)' : 'var(--danger)'}">${diff < 0 ? '↓' : '↑'}${Math.abs(diff).toFixed(2)} ${unit === 'jin' ? '斤' : 'kg'}</span>`;
+  }
   wrap.innerHTML = `
-    <div class="cal-head"><button id="calPrev">‹</button><b>${y}年${m + 1}月</b><button id="calNext">›</button></div>
+    <div class="cal-head"><button id="calPrev">‹</button><b>${y}年${m + 1}月${monthTotal}</b><button id="calNext">›</button></div>
     <div class="cal-week"><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div><div>日</div></div>
     <div class="cal-grid">${cells}</div>`;
   $('#calPrev').onclick = () => { calCursor.m--; if (calCursor.m < 0) { calCursor.m = 11; calCursor.y--; } renderWeightCal(); };
@@ -1019,6 +1111,53 @@ function renderInjRows() {
   wrap.innerHTML = `<div class="wtab"><div class="wrow head"><span class="c-date">日期</span><span class="c-w">浓度</span><span class="c-w">支·针</span><span class="c-df">🍚空腹</span></div>${rows}</div>`;
 }
 
+/* ---------- 日常：按月历史卡片 ---------- */
+let dailyCursor = null; // {y, m}
+function renderDailyList() {
+  const wrap = $('#dListWrap');
+  if (!dailyCursor) { const n = new Date(); dailyCursor = { y: n.getFullYear(), m: n.getMonth() }; }
+  const { y, m } = dailyCursor;
+  const list = getDaily()
+    .filter(r => Math.floor(r.day / 10000) === y && Math.floor(r.day / 100) % 100 === m + 1)
+    .sort((a, b) => b.day - a.day);
+  // 每天的最新体重（取当天任意状态的最后一条）
+  const wByDay = new Map();
+  getRecords().filter(r => kindOf(r) === 'weight').forEach(r => {
+    const k = dayKey(r.ts);
+    if (!wByDay.has(k) || wByDay.get(k).ts < r.ts) wByDay.set(k, r);
+  });
+  const unit = histUnit;
+  const cards = list.map(r => {
+    const ts = new Date(Math.floor(r.day / 10000), Math.floor(r.day / 100) % 100 - 1, r.day % 100, 12).getTime();
+    const [lab, md] = dayLabel(ts);
+    const w = wByDay.get(r.day);
+    const lines = [];
+    if (r.breakfast) lines.push(`🌅 ${r.breakfast}`);
+    if (r.lunch) lines.push(`☀️ ${r.lunch}`);
+    if (r.dinner) lines.push(`🌙 ${r.dinner}`);
+    if (r.snack) lines.push(`🍪 ${r.snack}`);
+    const dim = [];
+    if (r.waterMl) dim.push(`🥛 ${r.waterMl}ml`);
+    if (r.drinks) dim.push(`🥤 ${r.drinks}`);
+    if (r.sleepH) dim.push(`😴 ${r.sleepH}h`);
+    if (r.sport) dim.push(`🏃 ${r.sport}`);
+    if (r.poop) dim.push('💩');
+    if (r.period) dim.push('🩸');
+    return `<div class="day-card" data-day="${r.day}">
+      <div class="dh"><span>${lab ? lab + ' ' : ''}${md}</span>
+        <span class="r">${w ? '⚖️ ' + kgToDisp(w.kg, unit).toFixed(2) : ''}<button class="del" data-id="${r.id}" title="删除">✕</button></span>
+      </div>
+      ${lines.map(l => `<div class="dl">${l}</div>`).join('')}
+      ${dim.length ? `<div class="dl dim">${dim.join(' · ')}</div>` : ''}
+    </div>`;
+  }).join('');
+  wrap.innerHTML = `
+    <div class="cal-head"><button id="dPrev">‹</button><b>${y}年${m + 1}月</b><button id="dNext">›</button></div>
+    ${cards || '<div class="empty">这个月还没有日常记录</div>'}`;
+  $('#dPrev').onclick = () => { dailyCursor.m--; if (dailyCursor.m < 0) { dailyCursor.m = 11; dailyCursor.y--; } renderDailyList(); };
+  $('#dNext').onclick = () => { dailyCursor.m++; if (dailyCursor.m > 11) { dailyCursor.m = 0; dailyCursor.y++; } renderDailyList(); };
+}
+
 /* 打针弹层：日历点日期打开；一天一针（重复保存覆盖当天旧记录） */
 let injSheetDay = null; // 当前弹层对应的 dayKey
 function openInjSheet(k) {
@@ -1052,6 +1191,44 @@ function deleteInjSheet() {
   closeInjSheet();
   renderHistory();
   toast('已删除');
+}
+
+/* ---------- 日常记录 ---------- */
+let dWater = 0, dSleep = 0;             // 步进器当前值
+let dFlags = { poop: false, period: false };
+function dayKeyToDateStr(k) {
+  return `${Math.floor(k / 10000)}-${String(Math.floor(k / 100) % 100).padStart(2, '0')}-${String(k % 100).padStart(2, '0')}`;
+}
+function renderSteppers() {
+  $('#dWaterVal').innerHTML = `${dWater}<small> ml</small>`;
+  $('#dSleepVal').innerHTML = `${dSleep}<small> 小时</small>`;
+}
+function renderDFlags() {
+  $$('#dFlagSeg button').forEach(b => b.classList.toggle('on', !!dFlags[b.dataset.f]));
+}
+/* 按日期填充日常表单（有记录则带出，无则清空） */
+function prefillDailyForm(k) {
+  const r = dailyByDay(k);
+  $('#dDate').value = dayKeyToDateStr(k);
+  $('#dBreakfast').value = r?.breakfast || '';
+  $('#dLunch').value = r?.lunch || '';
+  $('#dDinner').value = r?.dinner || '';
+  $('#dSnack').value = r?.snack || '';
+  $('#dSport').value = r?.sport || '';
+  $('#dDrinks').value = r?.drinks || '';
+  dWater = r?.waterMl || 0;
+  dSleep = r?.sleepH || 0;
+  dFlags = { poop: !!r?.poop, period: !!r?.period };
+  renderSteppers();
+  renderDFlags();
+}
+/* 从历史卡片跳到录入页编辑某天 */
+function editDaily(k) {
+  curKind = 'daily';
+  applyKind();
+  prefillDailyForm(k);
+  renderRecent();
+  goPage('add');
 }
 
 function renderRecent() {
@@ -1399,7 +1576,7 @@ function download(filename, content, type) {
 function exportCsv() {
   const list = getRecords().sort((a, b) => a.ts - b.ts);
   const injs = getInj().sort((a, b) => a.ts - b.ts);
-  if (!list.length && !injs.length) { toast('暂无数据可导出'); return; }
+  if (!list.length && !injs.length && !getDaily().length) { toast('暂无数据可导出'); return; }
   const esc = (s) => `"${String(s ?? '').replace(/"/g, '""')}"`;
   const rows = [['类型', '时间', '收缩压', '舒张压', '心率', '体重(kg)', '状态', '备注', '记录人'].join(',')];
   list.forEach(r => {
@@ -1415,15 +1592,30 @@ function exportCsv() {
     rows.push(['打针', esc(new Date(r.ts).toLocaleString('zh-CN')), '', '', '', '', '',
       esc(`浓度${r.conc}mg · 第${r.pen}支第${r.shot}针`), esc(r.owner)].join(','));
   });
+  getDaily().sort((a, b) => a.day - b.day).forEach(r => {
+    const parts = [];
+    if (r.breakfast) parts.push('早:' + r.breakfast);
+    if (r.lunch) parts.push('午:' + r.lunch);
+    if (r.dinner) parts.push('晚:' + r.dinner);
+    if (r.snack) parts.push('加餐:' + r.snack);
+    if (r.waterMl) parts.push(`喝水${r.waterMl}ml`);
+    if (r.sleepH) parts.push(`睡眠${r.sleepH}h`);
+    if (r.sport) parts.push('运动:' + r.sport);
+    if (r.drinks) parts.push('饮品:' + r.drinks);
+    if (r.poop) parts.push('大便');
+    if (r.period) parts.push('月经');
+    rows.push(['日常', esc(dayKeyToDateStr(r.day)), '', '', '', '', '', esc(parts.join(' ')), esc(r.owner)].join(','));
+  });
   download(`生活记录_${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + rows.join('\n'), 'text/csv;charset=utf-8');
   toast('CSV 已导出 ✓');
 }
 function exportJson() {
   const list = getRecords();
   const injs = getInj();
-  if (!list.length && !injs.length) { toast('暂无数据可导出'); return; }
+  const daily = getDaily();
+  if (!list.length && !injs.length && !daily.length) { toast('暂无数据可导出'); return; }
   download(`生活记录备份_${new Date().toISOString().slice(0, 10)}.json`,
-    JSON.stringify({ records: list, injections: injs }, null, 2), 'application/json');
+    JSON.stringify({ records: list, injections: injs, daily }, null, 2), 'application/json');
   toast('备份已导出 ✓');
 }
 function importJson(file) {
@@ -1432,14 +1624,17 @@ function importJson(file) {
     try {
       let data = JSON.parse(rd.result);
       let injs = [];
+      let daily = [];
       if (!Array.isArray(data)) {
-        // 新格式：{records, injections}
+        // 新格式：{records, injections, daily}
         injs = Array.isArray(data.injections) ? data.injections : [];
+        daily = Array.isArray(data.daily) ? data.daily : [];
         data = Array.isArray(data.records) ? data.records : [];
       }
       const valid = data.filter(r => r && r.ts && ((r.sys && r.dia) || (kindOf(r) === 'weight' && r.kg)));
       const validInj = injs.filter(r => r && r.ts && (r.pen >= 1 || r.shot >= 1 || r.doseMl > 0));
-      if (!valid.length && !validInj.length) throw new Error();
+      const validDaily = daily.filter(r => r && r.day);
+      if (!valid.length && !validInj.length && !validDaily.length) throw new Error();
       const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       const existing = new Set(getRecords().map(r => r.id));
       const merged = getRecords().concat(valid.map(r => {
@@ -1464,8 +1659,23 @@ function importJson(file) {
         pen: +r.pen || 1,
         shot: +r.shot || 1
       }))));
+      if (validDaily.length) {
+        const map = new Map(getDaily().map(r => [r.day, r]));
+        validDaily.forEach(r => {
+          map.set(+r.day, {
+            id: map.get(+r.day)?.id || newId(),
+            owner: r.owner || currentUser(),
+            day: +r.day,
+            breakfast: r.breakfast || '', lunch: r.lunch || '', dinner: r.dinner || '', snack: r.snack || '',
+            poop: !!r.poop, period: !!r.period,
+            waterMl: +r.waterMl || 0, sleepH: +r.sleepH || 0,
+            sport: r.sport || '', drinks: r.drinks || ''
+          });
+        });
+        setDaily(Array.from(map.values()));
+      }
       renderRecent();
-      toast(`已导入 ${valid.length} 条记录${validInj.length ? `、${validInj.length} 条打针` : ''} ✓`, 3000);
+      toast(`已导入 ${valid.length} 条记录${validInj.length ? `、${validInj.length} 条打针` : ''}${validDaily.length ? `、${validDaily.length} 条日常` : ''} ✓`, 3000);
     } catch {
       toast('文件格式不正确', 3000);
     }
@@ -1520,6 +1730,34 @@ function bindEvents() {
   $('#wInjWrap').addEventListener('click', e => {
     const row = e.target.closest('.wrow[data-id]'); if (!row) return;
     if (confirm('删除这条打针记录？')) { delInj(row.dataset.id); renderHistory(); }
+  });
+  // 日常表单：大便/月经开关（可多选）
+  $('#dFlagSeg').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    dFlags[b.dataset.f] = !dFlags[b.dataset.f];
+    renderDFlags();
+  });
+  // 日常表单：喝水/睡眠步进
+  $('#dWaterMinus').addEventListener('click', () => { dWater = Math.max(0, dWater - 250); renderSteppers(); });
+  $('#dWaterPlus').addEventListener('click', () => { dWater += 250; renderSteppers(); });
+  $('#dSleepMinus').addEventListener('click', () => { dSleep = Math.max(0, Math.round((dSleep - 0.5) * 10) / 10); renderSteppers(); });
+  $('#dSleepPlus').addEventListener('click', () => { dSleep = Math.round((dSleep + 0.5) * 10) / 10; renderSteppers(); });
+  // 日常表单：换日期时带出那天已有记录
+  $('#dDate').addEventListener('change', () => {
+    const v = $('#dDate').value; if (!v) return;
+    const [y, m, dd] = v.split('-').map(Number);
+    prefillDailyForm(y * 10000 + m * 100 + dd);
+  });
+  // 日常历史：点卡片编辑，点 ✕ 删除
+  $('#dListWrap').addEventListener('click', e => {
+    const del = e.target.closest('.del');
+    if (del) {
+      e.stopPropagation();
+      if (confirm('删除这天的日常记录？')) { delDaily(del.dataset.id); renderHistory(); }
+      return;
+    }
+    const card = e.target.closest('.day-card');
+    if (card) editDaily(+card.dataset.day);
   });
   ['#inSys', '#inDia'].forEach(s => $(s).addEventListener('input', markBadInputs));
   $('#saveBtn').onclick = saveRecord;
