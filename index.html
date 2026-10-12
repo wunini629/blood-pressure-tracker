@@ -103,7 +103,7 @@
   .chart-card canvas { width: 100%; display: block; }
   .legend { display: flex; gap: 12px; font-size: 11px; color: var(--text-2); margin-bottom: 8px; }
   .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; }
-  .range-row { display: flex; gap: 8px; margin-top: 12px; }
+  .range-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
   .range-row button { flex: 1; font-size: 11px; padding: 7px; border-radius: 999px; background: #e6edf7; color: var(--text-2); }
   .range-row button.on { background: var(--primary); color: #fff; font-weight: 600; }
 
@@ -395,6 +395,9 @@
         <button data-d="7" class="on">近7天</button>
         <button data-d="30">近30天</button>
         <button data-d="90">近90天</button>
+        <button data-d="180">近半年</button>
+        <button data-d="365">近一年</button>
+        <button data-d="0">全部</button>
       </div>
     </div>
   </section>
@@ -1308,7 +1311,7 @@ function drawChart() {
   ctx.scale(dpr, dpr);
   ctx.clearRect(0, 0, W, H);
 
-  const since = Date.now() - chartDays * 864e5;
+  const since = chartDays ? Date.now() - chartDays * 864e5 : 0;
   const data = getRecords()
     .filter(r => kindOf(r) === chartKind && r.ts >= since)
     .filter(r => chartFilter === 'all' || (isW ? r.fast === chartFilter : r.med === chartFilter))
@@ -1321,7 +1324,7 @@ function drawChart() {
     ctx.textAlign = 'center';
     ctx.fillStyle = '#9aa4b0';
     ctx.font = '13px sans-serif';
-    ctx.fillText(`近${chartDays}天暂无数据`, W / 2, H / 2);
+    ctx.fillText(chartDays ? `近${chartDays}天暂无数据` : '暂无数据', W / 2, H / 2);
     return;
   }
 
