@@ -433,6 +433,17 @@
       </div>
     </div>
     <div class="set-group">
+      <h3>云同步（GitHub Gist，私密，自动合并）</h3>
+      <div class="card">
+        <div class="set-row"><label>🔑 Gist Token（只需 gist 权限，手机和电脑各填一次）</label><input id="setGistToken" type="password" placeholder="ghp_... 或 github_pat_..."></div>
+        <div class="set-row"><label>🔄 同步状态</label><span id="syncStatus" style="font-size:13px;color:var(--text-3)">未配置</span></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn plain" id="syncNowBtn" style="flex:1">立即同步</button>
+          <button class="btn" id="saveSyncBtn" style="flex:1">保存并开启同步</button>
+        </div>
+      </div>
+    </div>
+    <div class="set-group">
       <h3>数据</h3>
       <div class="card">
         <button class="btn plain" id="exportCsvBtn">导出 CSV（Excel 可打开）</button>
@@ -531,20 +542,26 @@ const K_ACCOUNT = 'bpx_account';   // {u, h, salt}
 const K_REMEMBER = 'bpx_remember'; // {u, p} 记住密码
 const K_RECORDS = 'bpx_records';   // [{id, owner, sys, dia, hr, ts, med, note}]
 const K_INJ = 'bpx_injections';    // [{id, owner, ts, conc, pen, shot}] 打针记录
-const K_DAILY = 'bpx_daily';       // [{id, owner, day, breakfast, lunch, dinner, snack, poop, period, waterMl, sleepH, sport, drinks}] 日常记录，一天一条
+const K_DAILY = 'bpx_daily';       // [{id, owner, day, breakfast, ..., updatedAt}] 日常记录，一天一条
+const K_DELETED = 'bpx_deleted';   // [{kind:'record'|'inj'|'daily', key, ts}] 删除标记（同步用）
 const K_SETTINGS = 'bpx_settings'; // {apiBase, model, apiKey}
 const S_SESSION = 'bpx_session';   // sessionStorage: 已登录用户名
 
 function getRecords() { return LS.get(K_RECORDS, []); }
 function setRecords(list) { LS.set(K_RECORDS, list); }
-function addRecord(r) { const l = getRecords(); l.push(r); setRecords(l); }
-function delRecord(id) { setRecords(getRecords().filter(r => r.id !== id)); }
+function addRecord(r) { const l = getRecords(); l.push(r); setRecords(l); scheduleSync(); }
+function delRecord(id) { setRecords(getRecords().filter(r => r.id !== id)); pushTomb('record', id); }
+
+/* 删除标记：同步时传播删除 */
+function getDeleted() { return LS.get(K_DELETED, []); }
+function setDeleted(list) { LS.set(K_DELETED, list.slice(-500)); }
+function pushTomb(kind, key) { const l = getDeleted(); l.push({ kind, key: String(key), ts: Date.now() }); setDeleted(l); }
 
 /* 打针记录：{id, owner, ts, conc, pen, shot} */
 function getInj() { return LS.get(K_INJ, []); }
 function setInj(list) { LS.set(K_INJ, list); }
-function addInj(r) { const l = getInj(); l.push(r); setInj(l); }
-function delInj(id) { setInj(getInj().filter(r => r.id !== id)); }
+function addInj(r) { const l = getInj(); l.push(r); setInj(l); scheduleSync(); }
+function delInj(id) { setInj(getInj().filter(r => r.id !== id)); pushTomb('inj', id); }
 function injByDayKey(k) { return getInj().filter(r => dayKey(r.ts) === k).sort((a, b) => b.ts - a.ts); }
 
 /* 日常记录：一天一条（按 day 覆盖更新） */
@@ -552,13 +569,19 @@ function getDaily() { return LS.get(K_DAILY, []); }
 function setDaily(list) { LS.set(K_DAILY, list); }
 function dailyByDay(k) { return getDaily().find(r => r.day === k) || null; }
 function upsertDaily(rec) {
+  rec.updatedAt = Date.now();
   const l = getDaily();
   const i = l.findIndex(r => r.day === rec.day);
   if (i >= 0) l[i] = rec;
   else l.push(rec);
   setDaily(l);
+  scheduleSync();
 }
-function delDaily(id) { setDaily(getDaily().filter(r => r.id !== id)); }
+function delDaily(id) {
+  const r = getDaily().find(x => x.id === id);
+  setDaily(getDaily().filter(x => x.id !== id));
+  if (r) pushTomb('daily', r.day);
+}
 
 /* 简单散列（crypto.subtle 不可用时兜底） */
 async function hashPass(salt, pass) {
@@ -655,7 +678,7 @@ function goPage(key) {
   $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + key));
   $$('#tabbar button, #sidebar button').forEach(b => b.classList.toggle('on', b.dataset.page === key));
   $('#camBtn').style.display = key === 'add' && curKind !== 'daily' ? '' : 'none';
-  if (key === 'history') renderHistory();
+  if (key === 'history') { renderHistory(); maybeSync(); }
   if (key === 'chart') drawChart();
 }
 
@@ -674,6 +697,7 @@ function enterApp() {
   applyChartKind();
   renderRecent();
   goPage('add');
+  syncNow(false); // 打开 app 自动拉取合并
 }
 
 /* ================= 录入页 ================= */
@@ -1389,9 +1413,13 @@ const DEFAULT_SETTINGS = {
   height: '',   // cm，用于 BMI
   target: '',   // 旧版单一目标体重 kg（兼容用，展示时迁移为 stages[0]）
   stages: [],   // 阶段目标体重 [kg, ...]，按顺序依次达成
-  unit: 'kg'    // 体重默认单位 kg / jin
+  unit: 'kg',   // 体重默认单位 kg / jin
+  gistToken: '',// 云同步 token（gist 权限，只存本机）
+  gistId: '',   // 自动创建的私密 Gist id
+  lastSync: 0   // 上次同步时间戳
 };
 function getSettings() { return Object.assign({}, DEFAULT_SETTINGS, LS.get(K_SETTINGS, {})); }
+function saveSettingsPartial(p) { LS.set(K_SETTINGS, Object.assign(getSettings(), p)); }
 
 /* 阶段目标（kg 数值数组，按顺序依次达成；兼容旧的单一 target） */
 function getStages() {
@@ -1512,6 +1540,8 @@ function loadSettings() {
   $('#setModel').value = st.model;
   $('#setApiKey').value = st.apiKey;
   $('#setHeight').value = st.height;
+  $('#setGistToken').value = st.gistToken;
+  if (st.gistToken) setSyncStatus(st.lastSync ? '已同步 · ' + hm(st.lastSync) : '待同步');
   stageDraft = getStages();
   renderStageEditor();
   $$('#unitSeg button').forEach(b => b.classList.toggle('on', b.dataset.u === (st.unit || 'kg')));
@@ -1562,6 +1592,113 @@ async function testApi() {
     else toast('连接失败：HTTP ' + resp.status, 3500);
   } catch (e) {
     toast('连接失败：' + e.message, 3500);
+  }
+}
+
+/* ================= 云同步（GitHub Gist） ================= */
+const GIST_FILE = 'life-tracker.json';
+function payload() {
+  return {
+    updatedAt: Date.now(),
+    records: getRecords(),
+    injections: getInj(),
+    daily: getDaily(),
+    deleted: getDeleted()
+  };
+}
+/* 合并远端数据：记录/打针按 id 并集，日常按天取较新，删除标记优先生效 */
+function mergeData(remote) {
+  const tombs = new Map();
+  (remote.deleted || []).concat(getDeleted()).forEach(t => {
+    if (!t || t.key === undefined) return;
+    const k = t.kind + ':' + t.key;
+    if (!tombs.has(k) || tombs.get(k) < t.ts) tombs.set(k, t.ts);
+  });
+  setDeleted(Array.from(tombs, ([k, ts]) => {
+    const i = k.indexOf(':');
+    return { kind: k.slice(0, i), key: k.slice(i + 1), ts };
+  }));
+  const mergeById = (local, remote2, kind) => {
+    const map = new Map();
+    (local || []).concat(remote2 || []).forEach(r => { if (r && r.id) map.set(r.id, r); });
+    return Array.from(map.values()).filter(r => !tombs.has(kind + ':' + r.id));
+  };
+  setRecords(mergeById(getRecords(), remote.records, 'record'));
+  setInj(mergeById(getInj(), remote.injections, 'inj'));
+  const dm = new Map();
+  (getDaily() || []).concat(remote.daily || []).forEach(r => {
+    if (!r || !r.day) return;
+    const old = dm.get(r.day);
+    if (!old || (r.updatedAt || 0) >= (old.updatedAt || 0)) dm.set(r.day, r);
+  });
+  setDaily(Array.from(dm.values()).filter(r => {
+    const t = tombs.get('daily:' + r.day);
+    return !t || (r.updatedAt || 0) > t;
+  }));
+}
+let syncing = false;
+let syncTimer = null;
+function scheduleSync() {
+  if (!getSettings().gistToken) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => syncNow(false), 1500);
+}
+/* 距上次同步超过 60s 才自动拉（进入记录页时用） */
+function maybeSync() {
+  const st = getSettings();
+  if (st.gistToken && Date.now() - (st.lastSync || 0) > 60000) syncNow(false);
+}
+function setSyncStatus(text, isErr) {
+  const el = $('#syncStatus');
+  if (el) { el.textContent = text; el.style.color = isErr ? 'var(--danger)' : 'var(--ok)'; }
+}
+async function syncNow(manual) {
+  const st = getSettings();
+  if (!st.gistToken) { if (manual) toast('请先填写 Gist Token'); return; }
+  if (syncing) return;
+  syncing = true;
+  setSyncStatus('同步中…');
+  const H = { 'Authorization': 'Bearer ' + st.gistToken, 'Accept': 'application/vnd.github+json' };
+  try {
+    let gistId = st.gistId;
+    if (!gistId) {
+      // 首次：创建私密 Gist 并上传全部本地数据
+      const resp = await fetch('https://api.github.com/gists', {
+        method: 'POST', headers: H,
+        body: JSON.stringify({
+          description: '生活记录数据（生活记录 PWA 自动同步，请勿删除）',
+          public: false,
+          files: { [GIST_FILE]: { content: JSON.stringify(payload()) } }
+        })
+      });
+      if (!resp.ok) throw new Error('创建 Gist 失败 HTTP ' + resp.status);
+      gistId = (await resp.json()).id;
+      saveSettingsPartial({ gistId });
+    } else {
+      // 拉取远端并合并到本地
+      const resp = await fetch(`https://api.github.com/gists/${gistId}`, { headers: H });
+      if (resp.status === 404) { saveSettingsPartial({ gistId: '' }); syncing = false; return syncNow(manual); }
+      if (!resp.ok) throw new Error('拉取失败 HTTP ' + resp.status);
+      const g = await resp.json();
+      const content = g.files?.[GIST_FILE]?.content;
+      if (content) mergeData(JSON.parse(content));
+    }
+    // 上传合并后的数据
+    const up = await fetch(`https://api.github.com/gists/${gistId}`, {
+      method: 'PATCH', headers: H,
+      body: JSON.stringify({ files: { [GIST_FILE]: { content: JSON.stringify(payload()) } } })
+    });
+    if (!up.ok) throw new Error('上传失败 HTTP ' + up.status);
+    saveSettingsPartial({ lastSync: Date.now() });
+    setSyncStatus('已同步 · ' + hm(Date.now()));
+    if (manual) toast('同步完成 ✓');
+    if (curPage === 'history') renderHistory();
+    renderRecent();
+  } catch (e) {
+    setSyncStatus('同步失败：' + e.message, true);
+    if (manual) toast('同步失败：' + e.message, 3000);
+  } finally {
+    syncing = false;
   }
 }
 
@@ -1669,12 +1806,14 @@ function importJson(file) {
             breakfast: r.breakfast || '', lunch: r.lunch || '', dinner: r.dinner || '', snack: r.snack || '',
             poop: !!r.poop, period: !!r.period,
             waterMl: +r.waterMl || 0, sleepH: +r.sleepH || 0,
-            sport: r.sport || '', drinks: r.drinks || ''
+            sport: r.sport || '', drinks: r.drinks || '',
+            updatedAt: +r.updatedAt || Date.now()
           });
         });
         setDaily(Array.from(map.values()));
       }
       renderRecent();
+      scheduleSync();
       toast(`已导入 ${valid.length} 条记录${validInj.length ? `、${validInj.length} 条打针` : ''}${validDaily.length ? `、${validDaily.length} 条日常` : ''} ✓`, 3000);
     } catch {
       toast('文件格式不正确', 3000);
@@ -1860,6 +1999,15 @@ function bindEvents() {
 
   $('#saveApiBtn').onclick = saveSettings;
   $('#testApiBtn').onclick = testApi;
+  $('#saveSyncBtn').onclick = () => {
+    saveSettingsPartial({ gistToken: $('#setGistToken').value.trim() });
+    toast('同步配置已保存 ✓');
+    syncNow(true);
+  };
+  $('#syncNowBtn').onclick = () => {
+    saveSettingsPartial({ gistToken: $('#setGistToken').value.trim() });
+    syncNow(true);
+  };
   $('#saveBodyBtn').onclick = saveBody;
   $('#unitSeg').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
