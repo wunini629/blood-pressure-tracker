@@ -1662,6 +1662,14 @@ async function syncNow(manual) {
   try {
     let gistId = st.gistId;
     if (!gistId) {
+      // 先查找账号下已有的同步 Gist（另一台设备可能已创建）
+      const listResp = await fetch('https://api.github.com/gists?per_page=100', { headers: H });
+      if (!listResp.ok) throw new Error('查找 Gist 失败 HTTP ' + listResp.status);
+      const gists = await listResp.json();
+      const found = gists.find(g => g.files && g.files[GIST_FILE]);
+      if (found) { gistId = found.id; saveSettingsPartial({ gistId }); }
+    }
+    if (!gistId) {
       // 首次：创建私密 Gist 并上传全部本地数据
       const resp = await fetch('https://api.github.com/gists', {
         method: 'POST', headers: H,
