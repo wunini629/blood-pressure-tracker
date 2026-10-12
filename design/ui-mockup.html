@@ -617,6 +617,12 @@
             <div style="font-size:12px;color:var(--text-3)">默认单位</div>
             <div class="seg"><div class="on">kg</div><div>斤</div></div>
           </div>
+          <div class="m-card" style="display:flex;flex-direction:column;gap:10px">
+            <div style="font-size:12px;color:var(--text-3)">☁️ 云同步（GitHub Gist，私密，自动合并）</div>
+            <div class="m-meta"><span>🔑 Gist Token</span><span>ghp_**** 已配置 ›</span></div>
+            <div class="m-meta"><span>🔄 同步状态</span><span style="color:var(--ok);font-weight:600">已同步 · 今天 15:30</span></div>
+            <div class="m-btn">立即同步</div>
+          </div>
           <div class="m-card" style="font-size:12px;color:var(--text-2)">
             📷 拍照识别（AI 接口）与血压共用，已配置 ✓<br>
             💾 导出 CSV 将同时包含血压、体重和打针记录
@@ -629,7 +635,7 @@
           <div class="on"><div class="ico"></div>设置</div>
         </div>
       </div>
-      <div class="label">⑧ 设置页（单个目标体重 → 阶段目标列表，可增删、阶段数不限）</div>
+      <div class="label">⑧ 设置页（阶段目标 + ☁️ 云同步：填一次 token，之后自动同步）</div>
     </div>
 
     <!-- 9 日历视图 -->
@@ -795,11 +801,11 @@
   <div class="note">Web 端沿用现有左右分栏：左侧录入卡片顶部同样有"血压 / 体重"切换，切到体重后表单变为体重版；右栏最近记录跟随切换。图表页和记录页同样加顶部切换，布局不变。体重日历在 Web 端加宽展示，交互不变。</div>
 
   <div class="feedback">
-    <b>本轮变更（V5），请确认：</b><br>
-    ① 日历月份表头加当月总计（⑨⑩）：`2026年8月 ↓3.20 kg`，口径 = 当月最后一次空腹 − 上月最后一次空腹（绿↓/红↑）<br>
-    ② 新增"🍽️ 日常"记录（⑫⑬）：录入页和记录页的顶部切换从两项变三项（⚖️ 体重 / 🩺 血压 / 🍽️ 日常）<br>
-    ③ 日常记录内容：早/午/晚餐 + 加餐（文字简记）、💩 大便开关、🩸 月经开关、🥛 喝水量（−/＋ 步进，每次 250ml）、😴 睡眠时长（步进 ±0.5h）、🏃 运动（一行文字）、🥤 喝了什么；每天一条，可补录修改<br>
-    ④ 日常历史卡（⑬）：日期右侧显示当日体重 ⚖️；顶部加月份筛选 `‹ 2026年8月 ›`；喝水图标统一用 🥛（水杯）<br>
+    <b>本轮变更（V6 云同步），请确认：</b><br>
+    ① 设置页新增"☁️ 云同步"卡片（⑧）：填一次 GitHub token（gist 权限），首次自动创建私密 Gist 存数据<br>
+    ② 自动同步逻辑：每次保存记录后自动上传；打开 app / 进入记录页时自动拉取合并；也可点"立即同步"手动触发<br>
+    ③ 合并规则：血压/体重/打针按记录合并（两端都保留），日常按天合并（同一天以较新修改为准），不会互相覆盖丢数据<br>
+    ④ 同步状态显示在卡片里（已同步·时间 / 同步中… / 失败原因），Token 只存在本机浏览器<br>
     确认后我开始改代码。
   </div>
 
