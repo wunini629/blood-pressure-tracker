@@ -1051,13 +1051,12 @@ function renderWeightCal() {
         : '<div class="w" style="color:var(--text-3)">—</div>') +
       '</div>';
   }
-  // 当月总计：当月最后一次空腹 − 此前最后一次空腹
+  // 当月总计：当月最早一天空腹 − 当月最晚一天空腹
   const mStart = y * 10000 + (m + 1) * 100 + 1;
   const inMonth = days.filter(g => g.key >= mStart && g.key <= mStart + 30);
-  const before = days.filter(g => g.key < mStart).pop();
   let monthTotal = '';
-  if (inMonth.length && before) {
-    const diff = kgToDisp(inMonth[inMonth.length - 1].fasting.kg - before.fasting.kg, unit);
+  if (inMonth.length >= 2) {
+    const diff = kgToDisp(inMonth[inMonth.length - 1].fasting.kg - inMonth[0].fasting.kg, unit);
     monthTotal = Math.abs(diff) < 0.005
       ? ' <span style="font-size:11px;color:var(--text-3)">持平</span>'
       : ` <span style="font-size:11px;color:${diff < 0 ? 'var(--ok)' : 'var(--danger)'}">${diff < 0 ? '↓' : '↑'}${Math.abs(diff).toFixed(2)} ${unit === 'jin' ? '斤' : 'kg'}</span>`;
