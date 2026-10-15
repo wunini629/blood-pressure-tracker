@@ -958,7 +958,10 @@ function renderStageCard() {
   el.innerHTML = `
     <div class="stage-now">🎯 第${s.idx + 1}阶段目标 ${w(t)} ${u}</div>
     <div class="stage-big">还差 ${diff.toFixed(2)} ${u} <small>当前 ${w(s.cur)} ${u}</small></div>
-    <div class="stage-bar"><i style="width:${Math.round(s.pct)}%"></i></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+      <div class="stage-bar" style="flex:1;margin-top:0"><i style="width:${Math.round(s.pct)}%"></i></div>
+      <span style="font-size:12px;font-weight:800;color:var(--primary-deep);white-space:nowrap">已达成 ${Math.round(s.pct)}%</span>
+    </div>
     ${doneLines}`;
 }
 
