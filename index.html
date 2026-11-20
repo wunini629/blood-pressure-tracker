@@ -203,6 +203,18 @@
   .sheet .fld input { border: none; background: none; outline: none; font-size: 13px; color: var(--text); text-align: right; }
   @media (min-width: 880px) { .sheet { left: 200px; } }
 
+  /* 体重当日明细弹层 */
+  #wDayList { display: flex; flex-direction: column; gap: 8px; max-height: 46vh; overflow: auto; }
+  .wdrow { display: flex; align-items: center; gap: 10px; font-size: 13px; background: var(--bg); border-radius: 999px; padding: 8px 10px 8px 16px; }
+  .wdrow .t { color: var(--text-2); white-space: nowrap; }
+  .wdrow .v { flex: 1; font-weight: 700; }
+  .wdrow .op { border: none; background: #fff; border-radius: 999px; padding: 4px 12px; font-size: 12px; color: var(--primary-deep); cursor: pointer; }
+  .wdrow .op.del { color: var(--danger); }
+  .wdrow .op.save { color: #fff; background: var(--primary); }
+  .wdrow input { border: none; background: #fff; border-radius: 999px; outline: none; font-size: 13px; color: var(--text); padding: 4px 10px; text-align: right; }
+  .wdrow input.wt { width: 78px; }
+  .wdrow input.wv { flex: 1; min-width: 0; font-weight: 700; }
+
   /* ===== 提示 ===== */
   .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(43,52,64,.92); color: #fff; font-size: 13px; padding: 10px 18px; border-radius: 999px; z-index: 99; opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 86vw; text-align: center; }
   .toast.show { opacity: 1; }
@@ -486,6 +498,16 @@
   </div>
 </div>
 
+<!-- ===== 体重当日明细弹层（列表点数字：查看/编辑/删除） ===== -->
+<div id="wDaySheet" style="display:none">
+  <div class="sheet-mask" id="wDaySheetMask"></div>
+  <div class="sheet">
+    <h4 id="wDayTitle"></h4>
+    <div id="wDayList"></div>
+    <button class="btn plain" id="wDayClose">关 闭</button>
+  </div>
+</div>
+
 <script>
 'use strict';
 /* ================= 工具 ================= */
@@ -554,6 +576,14 @@ function getRecords() { return LS.get(K_RECORDS, []); }
 function setRecords(list) { LS.set(K_RECORDS, list); }
 function addRecord(r) { const l = getRecords(); l.push(r); setRecords(l); scheduleSync(); }
 function delRecord(id) { setRecords(getRecords().filter(r => r.id !== id)); pushTomb('record', id); }
+/* 编辑记录：换新 id + 旧 id 进删除标记，保证同步时修改能传播到其他设备 */
+function editRecord(id, patch) {
+  const r = getRecords().find(x => x.id === id);
+  if (!r) return;
+  const nr = Object.assign({}, r, patch, { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) });
+  delRecord(id);
+  addRecord(nr);
+}
 
 /* 删除标记：同步时传播删除 */
 function getDeleted() { return LS.get(K_DELETED, []); }
@@ -998,7 +1028,7 @@ function renderWeightRows() {
   if (!days.length) { wrap.innerHTML = '<div class="empty">还没有体重记录，去录入一条吧</div>'; return; }
   const injKeys = new Set(getInj().map(r => dayKey(r.ts)));
   const cell = (r) => r
-    ? `<span class="c-w" data-id="${r.id}" title="点击可删除">${kgToDisp(r.kg, unit).toFixed(2)}<small>${hm(r.ts)}</small></span>`
+    ? `<span class="c-w" data-id="${r.id}" title="点击查看详情">${kgToDisp(r.kg, unit).toFixed(2)}<small>${hm(r.ts)}</small></span>`
     : '<span class="c-w none">—</span>';
   // 空腹较前日（上一个有空腹记录的日子）
   let prevFast = null;
@@ -1017,6 +1047,37 @@ function renderWeightRows() {
     return `<div class="wrow"><span class="c-date">${lab}<small>${md}${injMark}</small></span>${cell(g.fasting)}${cell(g.full)}${df}</div>`;
   }).reverse().join('');
   wrap.innerHTML = `<div class="wtab"><div class="wrow head"><span class="c-date">日期</span><span class="c-w">🍚 空腹</span><span class="c-w">🌙 非空腹</span><span class="c-df">较前日</span></div>${rows}</div>`;
+}
+
+/* ---------- 体重：当日明细弹层（查看/编辑/删除） ---------- */
+let wDayCtx = null;    // { dayK, fast }
+let wDayEditId = null; // 正在编辑的记录 id
+function openWDaySheet(dayK, fast) {
+  wDayCtx = { dayK, fast }; wDayEditId = null;
+  renderWDaySheet();
+  $('#wDaySheet').style.display = '';
+}
+function closeWDaySheet() { $('#wDaySheet').style.display = 'none'; wDayCtx = null; wDayEditId = null; }
+function wDayRecords() {
+  if (!wDayCtx) return [];
+  return getRecords()
+    .filter(r => kindOf(r) === 'weight' && dayKey(r.ts) === wDayCtx.dayK && (r.fast || 'fasting') === wDayCtx.fast)
+    .sort((a, b) => a.ts - b.ts);
+}
+function renderWDaySheet() {
+  const unit = histUnit, u = unit === 'jin' ? '斤' : 'kg';
+  const list = wDayRecords();
+  const k = wDayCtx.dayK;
+  $('#wDayTitle').textContent = `${wDayCtx.fast === 'full' ? '🌙 非空腹' : '🍚 空腹'} · ${Math.floor(k / 100) % 100}月${k % 100}日 · 共 ${list.length} 条`;
+  $('#wDayList').innerHTML = list.length ? list.map(r => {
+    if (r.id === wDayEditId) {
+      return `<div class="wdrow" data-id="${r.id}">
+        <input class="wt" type="time" value="${hm(r.ts)}">
+        <input class="wv" type="number" step="0.01" min="1" value="${kgToDisp(r.kg, unit).toFixed(2)}">
+        <button class="op save">保存</button><button class="op del cancel">取消</button></div>`;
+    }
+    return `<div class="wdrow" data-id="${r.id}"><span class="t">${hm(r.ts)}</span><span class="v">${kgToDisp(r.kg, unit).toFixed(2)} ${u}</span><button class="op edit">编辑</button><button class="op del">删除</button></div>`;
+  }).join('') : '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:12px 0">暂无记录</div>';
 }
 
 /* ---------- 体重：日历 ---------- */
@@ -1966,10 +2027,40 @@ function bindEvents() {
     stageDraft.splice(+b.dataset.i, 1);
     renderStageEditor();
   });
-  // 体重行式列表：点击某个体重数字可删除该条记录
+  // 体重行式列表：点击某个体重数字 → 打开当日该状态全部记录的明细弹层
   $('#wListWrap').addEventListener('click', e => {
     const cellEl = e.target.closest('[data-id]'); if (!cellEl) return;
-    if (confirm('删除这条记录？')) { delRecord(cellEl.dataset.id); renderHistory(); renderRecent(); }
+    const r = getRecords().find(x => x.id === cellEl.dataset.id); if (!r) return;
+    openWDaySheet(dayKey(r.ts), (r.fast || 'fasting') === 'full' ? 'full' : 'fasting');
+  });
+  // 明细弹层：关闭 / 编辑 / 保存 / 删除
+  $('#wDaySheetMask').onclick = closeWDaySheet;
+  $('#wDayClose').onclick = closeWDaySheet;
+  $('#wDayList').addEventListener('click', e => {
+    const row = e.target.closest('.wdrow'); if (!row) return;
+    const id = row.dataset.id;
+    if (e.target.closest('.edit')) { wDayEditId = id; renderWDaySheet(); return; }
+    if (e.target.closest('.cancel')) { wDayEditId = null; renderWDaySheet(); return; }
+    if (e.target.closest('.del') && !e.target.closest('.cancel')) {
+      if (!confirm('删除这条记录？')) return;
+      delRecord(id); wDayEditId = null;
+      renderHistory(); renderRecent();
+      if (wDayRecords().length) renderWDaySheet(); else closeWDaySheet();
+      toast('已删除');
+      return;
+    }
+    if (e.target.closest('.save')) {
+      const wv = parseFloat(row.querySelector('.wv').value);
+      const tv = row.querySelector('.wt').value;
+      if (isNaN(wv) || wv <= 0) { toast('请填写正确的体重'); return; }
+      const r = getRecords().find(x => x.id === id); if (!r) return;
+      const d = new Date(r.ts);
+      if (tv) { const p = tv.split(':'); d.setHours(+p[0], +p[1], 0, 0); }
+      editRecord(id, { kg: Math.round(dispToKg(wv, histUnit) * 100) / 100, ts: d.getTime() });
+      wDayEditId = null;
+      renderHistory(); renderRecent(); renderWDaySheet();
+      toast('已保存');
+    }
   });
   $('#histList').addEventListener('click', e => {
     const btn = e.target.closest('.del'); if (!btn) return;
