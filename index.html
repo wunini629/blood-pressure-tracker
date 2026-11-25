@@ -451,7 +451,7 @@
   <section class="page" id="page-settings">
     <h2>设置</h2>
     <div class="set-group">
-      <h3>拍照识别（AI 接口）</h3>
+      <h3>拍照识别（Moonshot 接口，需支持图片）</h3>
       <div class="card">
         <div class="set-row"><label>接口地址（OpenAI 兼容）</label><input id="setApiBase" placeholder="https://api.moonshot.cn/v1"></div>
         <div class="set-row"><label>模型名</label><input id="setModel" placeholder="kimi-k2.6"></div>
@@ -459,6 +459,19 @@
         <div style="display:flex;gap:10px">
           <button class="btn plain" id="testApiBtn" style="flex:1">测试连接</button>
           <button class="btn" id="saveApiBtn" style="flex:1">保存配置</button>
+        </div>
+      </div>
+    </div>
+    <div class="set-group">
+      <h3>AI 助手（聊天接口，可用 Kimi 会员权益）</h3>
+      <div class="card">
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:10px">有 Kimi 会员（Moderato 及以上）可去 Kimi Code Console 创建 API Key，聊天走会员额度不额外计费</div>
+        <div class="set-row"><label>接口地址（OpenAI 兼容）</label><input id="setChatApiBase" placeholder="https://api.kimi.com/coding/v1"></div>
+        <div class="set-row"><label>模型名</label><input id="setChatModel" placeholder="k3"></div>
+        <div class="set-row"><label>API Key（只保存在本机）</label><input id="setChatApiKey" type="password" placeholder="Kimi Code Console 创建"></div>
+        <div style="display:flex;gap:10px">
+          <button class="btn plain" id="testChatApiBtn" style="flex:1">测试连接</button>
+          <button class="btn" id="saveChatApiBtn" style="flex:1">保存配置</button>
         </div>
       </div>
     </div>
@@ -1310,7 +1323,7 @@ async function sendAi(q) {
   q = (q || '').trim();
   if (!q || aiSending) return;
   const st = getSettings();
-  if (!st.apiKey) { toast('请先在"设置"页配置 API Key', 3000); goPage('settings'); return; }
+  if (!st.chatApiKey) { toast('请先在"设置"页配置 AI 助手的聊天接口', 3000); goPage('settings'); return; }
   aiSending = true;
   $('#aiInput').value = '';
   aiBubble('user', q);
@@ -1319,10 +1332,10 @@ async function sendAi(q) {
   thinking.classList.add('typing');
   try {
     const sys = '你是用户的个人健康记录分析助手。以下是用户 App 里的本地记录数据。请用中文回答，简洁、口语化；数字要基于数据，不要编造数据里没有的内容，可以适当做分析和建议。单位说明：体重 kg，喝水 ml，睡眠 小时。\n\n' + buildAiData();
-    const resp = await fetch(st.apiBase.replace(/\/+$/, '') + '/chat/completions', {
+    const resp = await fetch(st.chatApiBase.replace(/\/+$/, '') + '/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + st.apiKey },
-      body: JSON.stringify({ model: st.model, messages: [{ role: 'system', content: sys }].concat(aiHistory.slice(-9)) })
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + st.chatApiKey },
+      body: JSON.stringify({ model: st.chatModel, messages: [{ role: 'system', content: sys }].concat(aiHistory.slice(-9)) })
     });
     if (!resp.ok) { const t = await resp.text(); throw new Error('接口返回 ' + resp.status + '：' + t.slice(0, 120)); }
     const json = await resp.json();
@@ -1657,6 +1670,9 @@ const DEFAULT_SETTINGS = {
   apiBase: 'https://api.moonshot.cn/v1',
   model: 'kimi-k2.6',
   apiKey: '',
+  chatApiBase: 'https://api.kimi.com/coding/v1', // AI 助手聊天接口（Kimi 会员权益）
+  chatModel: 'k3',
+  chatApiKey: '',
   height: '',   // cm，用于 BMI
   target: '',   // 旧版单一目标体重 kg（兼容用，展示时迁移为 stages[0]）
   stages: [],   // 阶段目标体重 [kg, ...]，按顺序依次达成
@@ -1786,6 +1802,9 @@ function loadSettings() {
   $('#setApiBase').value = st.apiBase;
   $('#setModel').value = st.model;
   $('#setApiKey').value = st.apiKey;
+  $('#setChatApiBase').value = st.chatApiBase;
+  $('#setChatModel').value = st.chatModel;
+  $('#setChatApiKey').value = st.chatApiKey;
   $('#setHeight').value = st.height;
   $('#setGistToken').value = st.gistToken;
   if (st.gistToken) setSyncStatus(st.lastSync ? '已同步 · ' + hm(st.lastSync) : '待同步');
@@ -1812,6 +1831,15 @@ function saveSettings() {
   }));
   toast('配置已保存 ✓');
 }
+function saveChatSettings() {
+  const cur = getSettings();
+  LS.set(K_SETTINGS, Object.assign(cur, {
+    chatApiBase: $('#setChatApiBase').value.trim() || DEFAULT_SETTINGS.chatApiBase,
+    chatModel: $('#setChatModel').value.trim() || DEFAULT_SETTINGS.chatModel,
+    chatApiKey: $('#setChatApiKey').value.trim()
+  }));
+  toast('聊天接口已保存 ✓');
+}
 function saveBody() {
   const cur = getSettings();
   const stages = $$('#stageList input').map(i => parseFloat(i.value)).filter(v => v > 0);
@@ -1837,6 +1865,23 @@ async function testApi() {
     });
     if (resp.ok) toast('连接成功 ✓');
     else toast('连接失败：HTTP ' + resp.status, 3500);
+  } catch (e) {
+    toast('连接失败：' + e.message, 3500);
+  }
+}
+async function testChatApi() {
+  saveChatSettings();
+  const st = getSettings();
+  if (!st.chatApiKey) { toast('请先填写聊天接口 API Key'); return; }
+  toast('测试连接中…', 60000);
+  try {
+    const resp = await fetch(st.chatApiBase.replace(/\/+$/, '') + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + st.chatApiKey },
+      body: JSON.stringify({ model: st.chatModel, messages: [{ role: 'user', content: 'hi' }], max_tokens: 8 })
+    });
+    if (resp.ok) toast('连接成功 ✓');
+    else { const t = await resp.text(); toast('连接失败：HTTP ' + resp.status + ' ' + t.slice(0, 80), 4000); }
   } catch (e) {
     toast('连接失败：' + e.message, 3500);
   }
@@ -2291,6 +2336,8 @@ function bindEvents() {
 
   $('#saveApiBtn').onclick = saveSettings;
   $('#testApiBtn').onclick = testApi;
+  $('#saveChatApiBtn').onclick = saveChatSettings;
+  $('#testChatApiBtn').onclick = testChatApi;
   $('#saveSyncBtn').onclick = () => {
     saveSettingsPartial({ gistToken: $('#setGistToken').value.trim() });
     toast('同步配置已保存 ✓');
