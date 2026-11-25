@@ -215,6 +215,21 @@
   .wdrow input.wt { width: 78px; }
   .wdrow input.wv { flex: 1; min-width: 0; font-weight: 700; }
 
+  /* ===== AI 助手 ===== */
+  #page-ai.on { display: flex; flex-direction: column; height: 100dvh; padding-bottom: calc(74px + env(safe-area-inset-bottom)); }
+  .ai-msgs { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 2px; }
+  .bubble { max-width: 84%; font-size: 13px; line-height: 1.6; padding: 10px 14px; border-radius: 16px; white-space: pre-wrap; word-break: break-word; }
+  .bubble.ai { align-self: flex-start; background: #fff; border-bottom-left-radius: 4px; box-shadow: 0 2px 8px rgba(70,100,140,.08); }
+  .bubble.me { align-self: flex-end; background: linear-gradient(135deg, var(--primary), var(--primary-deep)); color: #fff; border-bottom-right-radius: 4px; }
+  .bubble .tag { display: block; font-size: 10px; opacity: .65; margin-top: 6px; }
+  .bubble.typing { color: var(--text-3); }
+  .ai-chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 0; }
+  .ai-chips button { font-size: 12px; color: var(--primary-deep); background: var(--primary-light); border-radius: 999px; padding: 7px 13px; }
+  .ai-inputbar { display: flex; gap: 8px; align-items: center; background: #fff; border-radius: 999px; padding: 6px 6px 6px 16px; box-shadow: 0 3px 12px rgba(70,100,140,.07); }
+  .ai-inputbar input { flex: 1; border: none; outline: none; font-size: 13px; background: none; min-width: 0; }
+  .ai-inputbar button { background: linear-gradient(135deg, var(--primary), var(--primary-deep)); color: #fff; font-size: 13px; font-weight: 600; border-radius: 999px; padding: 9px 18px; white-space: nowrap; }
+  @media (min-width: 880px) { #page-ai.on { padding-bottom: 24px; } }
+
   /* ===== 提示 ===== */
   .toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(43,52,64,.92); color: #fff; font-size: 13px; padding: 10px 18px; border-radius: 999px; z-index: 99; opacity: 0; transition: opacity .25s; pointer-events: none; max-width: 86vw; text-align: center; }
   .toast.show { opacity: 1; }
@@ -355,6 +370,7 @@
         <button data-v="list" class="on">☰</button>
         <button data-v="cal">📅</button>
         <button data-v="inj">💉</button>
+        <button data-v="ov">📊</button>
       </div>
       <div class="unit-mini" id="histUnitSeg">
         <button data-u="kg" class="on">kg</button>
@@ -375,6 +391,7 @@
     <div id="wListWrap" style="display:none"></div>
     <div id="wCalWrap" style="display:none"></div>
     <div id="wInjWrap" style="display:none"></div>
+    <div id="wOvWrap" style="display:none"></div>
     <div id="dListWrap" style="display:none"></div>
   </section>
 
@@ -411,6 +428,22 @@
         <button data-d="365">近一年</button>
         <button data-d="0">全部</button>
       </div>
+    </div>
+  </section>
+
+  <!-- AI 助手页 -->
+  <section class="page" id="page-ai">
+    <h2>🤖 AI 助手</h2>
+    <div class="ai-msgs" id="aiMsgs"></div>
+    <div class="ai-chips" id="aiChips">
+      <button data-q="总结一下我这个月的减重情况">本月减重总结</button>
+      <button data-q="分析我的饮食和体重变化有什么关系">饮食和体重的关系</button>
+      <button data-q="梳理我的打针记录，分析打针和体重变化的关系">打针周期分析</button>
+      <button data-q="我最近为什么涨秤？">最近为什么涨秤？</button>
+    </div>
+    <div class="ai-inputbar">
+      <input id="aiInput" placeholder="问点什么，比如：最近为什么涨秤？" enterkeyhint="send">
+      <button id="aiSend">发送</button>
     </div>
   </section>
 
@@ -687,6 +720,7 @@ const NAV_ITEMS = [
   ['add', '✎', '录入'],
   ['history', '☰', '记录'],
   ['chart', '↗', '图表'],
+  ['ai', '🤖', 'AI'],
   ['settings', '⚙', '设置'],
 ];
 let curPage = 'add';
@@ -713,6 +747,7 @@ function goPage(key) {
   $('#camBtn').style.display = key === 'add' && curKind !== 'daily' ? '' : 'none';
   if (key === 'history') { renderHistory(); maybeSync(); }
   if (key === 'chart') drawChart();
+  if (key === 'ai') enterAi();
 }
 
 function enterApp() {
@@ -902,7 +937,7 @@ function recItemHTML(r, wAsc) {
 
 let histFilter = 'all';
 let histKind = 'weight';
-let histView = 'list';      // 体重模式：list | cal | inj
+let histView = 'list';      // 体重模式：list | cal | inj | ov
 let histUnit = 'kg';        // 记录页展示单位（默认 kg，可切换斤）
 let calCursor = null;       // {y, m} 日历当前月份
 
@@ -918,6 +953,7 @@ function renderHistory() {
   $('#wListWrap').style.display = isW && histView === 'list' ? '' : 'none';
   $('#wCalWrap').style.display = isW && histView === 'cal' ? '' : 'none';
   $('#wInjWrap').style.display = isW && histView === 'inj' ? '' : 'none';
+  $('#wOvWrap').style.display = isW && histView === 'ov' ? '' : 'none';
   $('#dListWrap').style.display = isD ? '' : 'none';
   if (isD) { renderDailyList(); return; }
   if (isW) {
@@ -925,6 +961,7 @@ function renderHistory() {
     renderStageCard();
     if (histView === 'list') renderWeightRows();
     else if (histView === 'cal') renderWeightCal();
+    else if (histView === 'ov') renderWeightOv();
     else renderInjRows();
     return;
   }
@@ -1156,6 +1193,150 @@ function collectInj(dateTs, timeId, penId, shotId, concSeg) {
     conc: injConcOf(concSeg),
     pen, shot
   };
+}
+
+/* ---------- 体重：月度总览 ---------- */
+let ovYear = null; // 总览页当前年份
+function renderWeightOv() {
+  const unit = histUnit, u = unit === 'jin' ? '斤' : 'kg';
+  const wrap = $('#wOvWrap');
+  const days = weightDays().filter(g => g.fasting);
+  const now = new Date();
+  if (!ovYear) ovYear = now.getFullYear();
+  const minY = days.length ? Math.floor(days[0].key / 10000) : now.getFullYear();
+  ovYear = Math.min(Math.max(ovYear, minY), now.getFullYear());
+  const w2 = kg => kgToDisp(kg, unit).toFixed(2);
+  const inYear = days.filter(g => Math.floor(g.key / 10000) === ovYear);
+  const wCnt = getRecords().filter(r => kindOf(r) === 'weight' && new Date(r.ts).getFullYear() === ovYear).length;
+  const injCnt = getInj().filter(r => new Date(r.ts).getFullYear() === ovYear).length;
+  let sumCard;
+  if (inYear.length >= 2) {
+    const yDiff = kgToDisp(inYear[inYear.length - 1].fasting.kg - inYear[0].fasting.kg, unit);
+    const yTxt = Math.abs(yDiff) < 0.005 ? '持平' : `${yDiff < 0 ? '↓' : '↑'} ${Math.abs(yDiff).toFixed(2)} ${u}`;
+    sumCard = `<div class="stage-card" style="margin-bottom:10px">
+      <div class="stage-big">${yTxt} <small>${ovYear}年累计</small></div>
+      <div class="stage-now" style="margin-top:4px">${w2(inYear[0].fasting.kg)} → ${w2(inYear[inYear.length - 1].fasting.kg)} ${u} · 共 ${wCnt} 条记录 · 💉 ${injCnt} 针</div>
+    </div>`;
+  } else {
+    sumCard = '<div class="empty" style="margin-bottom:10px">这一年还没有足够的体重记录</div>';
+  }
+  const recs = getRecords().filter(r => kindOf(r) === 'weight');
+  const rows = [];
+  for (let mm = 11; mm >= 0; mm--) {
+    const inM = inYear.filter(g => Math.floor(g.key / 100) % 100 === mm + 1);
+    if (!inM.length) {
+      rows.push(`<div class="wrow"><span class="c-date">${mm + 1}月</span><span class="c-w none">—</span><span class="c-w none">—</span><span class="c-df flat">—</span></div>`);
+      continue;
+    }
+    const cnt = recs.filter(r => { const d = new Date(r.ts); return d.getFullYear() === ovYear && d.getMonth() === mm; }).length;
+    const diff = kgToDisp(inM[inM.length - 1].fasting.kg - inM[0].fasting.kg, unit);
+    const df = Math.abs(diff) < 0.005
+      ? '<span class="c-df flat">持平</span>'
+      : `<span class="c-df ${diff < 0 ? 'down' : 'up'}">${diff < 0 ? '↓' : '↑'}${Math.abs(diff).toFixed(2)}</span>`;
+    rows.push(`<div class="wrow"><span class="c-date">${mm + 1}月<small>${cnt}条</small></span><span class="c-w">${w2(inM[0].fasting.kg)}</span><span class="c-w">${w2(inM[inM.length - 1].fasting.kg)}</span>${df}</div>`);
+  }
+  wrap.innerHTML = `
+    <div class="cal-head"><button id="ovPrev">‹</button><b>${ovYear}年</b><button id="ovNext">›</button></div>
+    ${sumCard}
+    <div class="wtab"><div class="wrow head"><span class="c-date">月份</span><span class="c-w">月首</span><span class="c-w">月末</span><span class="c-df">变化</span></div>${rows.join('')}</div>`;
+  $('#ovPrev').onclick = () => { ovYear--; renderWeightOv(); };
+  $('#ovNext').onclick = () => { ovYear++; renderWeightOv(); };
+}
+
+/* ================= AI 助手 ================= */
+const aiHistory = []; // {role, content} 对话上下文
+let aiReady = false;
+let aiSending = false;
+
+function aiDataStats() {
+  const w = getRecords().filter(r => kindOf(r) === 'weight').length;
+  const bp = getRecords().filter(r => kindOf(r) === 'bp').length;
+  return `${w} 条体重 · ${bp} 条血压 · ${getInj().length} 针 · ${getDaily().length} 天日常`;
+}
+function aiBubble(role, text, tag) {
+  const div = document.createElement('div');
+  div.className = 'bubble ' + (role === 'user' ? 'me' : 'ai');
+  div.textContent = text;
+  if (tag) { const t = document.createElement('span'); t.className = 'tag'; t.textContent = tag; div.appendChild(t); }
+  $('#aiMsgs').appendChild(div);
+  $('#aiMsgs').scrollTop = $('#aiMsgs').scrollHeight;
+  return div;
+}
+function enterAi() {
+  if (aiReady) return;
+  aiReady = true;
+  aiBubble('assistant', '你好！我能看到你的体重、血压、打针和日常记录，想问什么直接说～', '数据已就绪：' + aiDataStats());
+}
+/* 把本地记录压缩成文字摘要，随问题发给模型 */
+function buildAiData() {
+  const L = [];
+  const recs = getRecords().slice().sort((a, b) => a.ts - b.ts);
+  const w = recs.filter(r => kindOf(r) === 'weight');
+  if (w.length) {
+    L.push('【体重记录】单位kg，格式：日期 状态 体重');
+    w.forEach(r => { const d = new Date(r.ts); L.push(`${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${r.fast === 'full' ? '非空腹' : '空腹'} ${r.kg}`); });
+  }
+  const bp = recs.filter(r => kindOf(r) === 'bp');
+  if (bp.length) {
+    L.push('【血压记录】格式：日期 时间 收缩压/舒张压 心率 状态');
+    bp.forEach(r => { const d = new Date(r.ts); L.push(`${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${hm(r.ts)} ${r.sys}/${r.dia} 心率${r.hr || '-'} ${r.med === 'before' ? '服药前' : '服药后'}`); });
+  }
+  const inj = getInj().slice().sort((a, b) => a.ts - b.ts);
+  if (inj.length) {
+    L.push('【打针记录】替尔泊肽，格式：日期 浓度 第几支第几针');
+    inj.forEach(r => { const d = new Date(r.ts); L.push(`${d.getFullYear()}/${d.getMonth() + 1}/${d.getDate()} ${r.conc}mg 第${r.pen}支第${r.shot}针`); });
+  }
+  const daily = getDaily().slice().sort((a, b) => a.day - b.day);
+  if (daily.length) {
+    L.push('【日常记录】格式：日期 三餐/加餐/喝水ml/睡眠h/运动/饮品/大便/月经');
+    daily.forEach(r => {
+      const p = [];
+      if (r.breakfast) p.push('早:' + r.breakfast);
+      if (r.lunch) p.push('午:' + r.lunch);
+      if (r.dinner) p.push('晚:' + r.dinner);
+      if (r.snack) p.push('加餐:' + r.snack);
+      if (r.waterMl) p.push('水' + r.waterMl + 'ml');
+      if (r.sleepH) p.push('睡' + r.sleepH + 'h');
+      if (r.sport) p.push('运动:' + r.sport);
+      if (r.drinks) p.push('饮品:' + r.drinks);
+      if (r.poop) p.push('有大便');
+      if (r.period) p.push('月经期');
+      L.push(`${Math.floor(r.day / 10000)}/${Math.floor(r.day / 100) % 100}/${r.day % 100} ${p.join(' ')}`);
+    });
+  }
+  return L.join('\n');
+}
+async function sendAi(q) {
+  q = (q || '').trim();
+  if (!q || aiSending) return;
+  const st = getSettings();
+  if (!st.apiKey) { toast('请先在"设置"页配置 API Key', 3000); goPage('settings'); return; }
+  aiSending = true;
+  $('#aiInput').value = '';
+  aiBubble('user', q);
+  aiHistory.push({ role: 'user', content: q });
+  const thinking = aiBubble('assistant', '思考中…');
+  thinking.classList.add('typing');
+  try {
+    const sys = '你是用户的个人健康记录分析助手。以下是用户 App 里的本地记录数据。请用中文回答，简洁、口语化；数字要基于数据，不要编造数据里没有的内容，可以适当做分析和建议。单位说明：体重 kg，喝水 ml，睡眠 小时。\n\n' + buildAiData();
+    const resp = await fetch(st.apiBase.replace(/\/+$/, '') + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + st.apiKey },
+      body: JSON.stringify({ model: st.model, messages: [{ role: 'system', content: sys }].concat(aiHistory.slice(-9)) })
+    });
+    if (!resp.ok) { const t = await resp.text(); throw new Error('接口返回 ' + resp.status + '：' + t.slice(0, 120)); }
+    const json = await resp.json();
+    const text = json.choices && json.choices[0] && json.choices[0].message ? json.choices[0].message.content : '（没有返回内容）';
+    thinking.classList.remove('typing');
+    thinking.textContent = text;
+    aiHistory.push({ role: 'assistant', content: text });
+  } catch (err) {
+    thinking.classList.remove('typing');
+    thinking.textContent = '出错了：' + err.message;
+    aiHistory.pop(); // 失败的问题不留在上下文
+  }
+  aiSending = false;
+  $('#aiMsgs').scrollTop = $('#aiMsgs').scrollHeight;
 }
 
 /* 打针视图：行式列表，每针一行 + 当天空腹体重（较上一针涨跌） */
@@ -2066,6 +2247,13 @@ function bindEvents() {
     const btn = e.target.closest('.del'); if (!btn) return;
     const id = btn.closest('.rec').dataset.id;
     if (confirm('删除这条记录？')) { delRecord(id); renderHistory(); renderRecent(); }
+  });
+  // AI 助手：发送 / 回车 / 快捷提问
+  $('#aiSend').addEventListener('click', () => sendAi($('#aiInput').value));
+  $('#aiInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendAi($('#aiInput').value); });
+  $('#aiChips').addEventListener('click', e => {
+    const b = e.target.closest('button[data-q]'); if (!b) return;
+    sendAi(b.dataset.q);
   });
   $('#recentList').addEventListener('click', e => {
     const btn = e.target.closest('.del'); if (!btn) return;
